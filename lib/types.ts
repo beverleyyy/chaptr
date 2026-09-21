@@ -172,6 +172,7 @@ export type Database = {
         Args: { p_role: string; p_name: string; p_phone?: string | null };
         Returns: Profile;
       };
+      list_pending_tutoring_requests: { Args: Record<string, never>; Returns: Database["public"]["Tables"]["tutoring_requests"]["Row"][] };
       create_my_tutoring_request: {
         Args: {
           p_topic_key: string;

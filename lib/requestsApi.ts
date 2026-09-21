@@ -333,15 +333,26 @@ export async function fetchPendingRequests(): Promise<{
   pendingIds: string[];
 }> {
   const sb = requireSupabase();
-  const { data, error } = await sb
-    .from('tutoring_requests')
-    .select('*')
-    .eq('status', 'pending')
-    .gt('expires_at', new Date().toISOString())
-    .order('created_at', { ascending: false });
-  if (error) throw error;
+  let rows: TutoringRequestRow[] = [];
 
-  const rows = (data ?? []) as TutoringRequestRow[];
+  const { data: rpcData, error: rpcErr } = await sb.rpc('list_pending_tutoring_requests');
+  if (!rpcErr && rpcData) {
+    rows = rpcData as TutoringRequestRow[];
+  } else {
+    if (rpcErr && !isMissingRpcError(rpcErr)) {
+      // Fall through to table select; if that also fails, throw below
+      console.warn('list_pending_tutoring_requests', formatApiError(rpcErr));
+    }
+    const { data, error } = await sb
+      .from('tutoring_requests')
+      .select('*')
+      .eq('status', 'pending')
+      .gt('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    rows = (data ?? []) as TutoringRequestRow[];
+  }
+
   const profiles = await fetchProfilesByIds(rows.map((r) => r.student_id));
 
   const requests: Record<string, TutorRequest> = {};
