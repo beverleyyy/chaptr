@@ -36,7 +36,7 @@ export default function TutorHome() {
     refreshTutorData,
     tutorDataError,
   } = useApp();
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const displayName = profile?.name ?? 'Mr. Rajan';
   const [refreshing, setRefreshing] = useState(false);
 
@@ -58,6 +58,13 @@ export default function TutorHome() {
 
   return (
     <Screen glow="left">
+      <View style={styles.debugBanner}>
+        <Text style={styles.debugText}>
+          {usingBackend
+            ? `LIVE · pending ${pendingRequestIds.length} · you: ${profile?.role ?? 'no profile'} · ${user?.email ?? 'not signed in'}`
+            : 'DEMO MODE — .env not loaded. Stop Expo, confirm .env exists, run: npx expo start -c'}
+        </Text>
+      </View>
       {toastRequestId && requests[toastRequestId] ? (
         <View style={styles.toast}>
           <Avatar initials={requests[toastRequestId].initials} size={36} />
@@ -205,6 +212,22 @@ export default function TutorHome() {
 }
 
 const styles = StyleSheet.create({
+  debugBanner: {
+    marginHorizontal: 22,
+    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: '#FFF0E6',
+    borderWidth: 1,
+    borderColor: colors.accent,
+  },
+  debugText: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    color: colors.accentDark,
+    lineHeight: 15,
+  },
   header: {
     paddingTop: 54,
     paddingHorizontal: 22,

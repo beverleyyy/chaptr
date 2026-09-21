@@ -53,6 +53,19 @@ export default function Payment() {
   return (
     <Screen>
       <BackHeader title="Scan to pay" onBack={() => router.back()} />
+      <Text
+        style={{
+          marginHorizontal: 22,
+          marginBottom: 8,
+          fontFamily: fonts.medium,
+          fontSize: 11,
+          color: usingBackend ? colors.accentDark : colors.danger,
+        }}
+      >
+        {usingBackend
+          ? 'LIVE booking — tutors will see this request in Supabase'
+          : 'DEMO MODE — not saving to Supabase. Fix .env and restart with npx expo start -c'}
+      </Text>
       <View style={styles.body}>
         <View style={{ alignItems: 'center' }}>
           <DimText>Amount due</DimText>
