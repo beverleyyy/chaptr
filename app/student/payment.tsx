@@ -7,28 +7,44 @@ import { Screen, Card, Display, BackHeader, BtnPrimary, DimText } from '@/compon
 import { HANDOFF_NOTE, TOPICS } from '@/constants/mockData';
 import { colors, fonts } from '@/constants/theme';
 import { PayNowQR } from '@/components/PayNowQR';
+import { formatApiError } from '@/lib/requestsApi';
 
 export default function Payment() {
   const { booking, submitBookingRequest, usingBackend, busyAction } = useApp();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [errorText, setErrorText] = useState<string | null>(null);
   const topic = TOPICS[booking.topicId];
 
   const confirm = async () => {
     if (busy || busyAction) return;
     setBusy(true);
+    setErrorText(null);
     try {
       if (usingBackend) {
-        await submitBookingRequest(topic.subject, HANDOFF_NOTE);
+        const result = await Promise.race([
+          submitBookingRequest(topic.subject, HANDOFF_NOTE),
+          new Promise<never>((_, reject) =>
+            setTimeout(
+              () =>
+                reject(
+                  new Error(
+                    'Timed out creating the request. Run the SQL fix in Supabase, then git pull and restart Expo.',
+                  ),
+                ),
+              20000,
+            ),
+          ),
+        ]);
+        void result;
       } else {
         await new Promise((r) => setTimeout(r, 900));
       }
       router.push('/student/matching');
     } catch (e) {
-      Alert.alert(
-        'Could not create request',
-        e instanceof Error ? e.message : 'Something went wrong',
-      );
+      const msg = formatApiError(e);
+      setErrorText(msg);
+      Alert.alert('Could not create request', msg);
     } finally {
       setBusy(false);
     }
@@ -62,6 +78,12 @@ export default function Payment() {
               : ' (Mock payment — no money moves.)'}
           </DimText>
         </Card>
+
+        {errorText ? (
+          <Text style={styles.errorText} accessibilityRole="alert">
+            {errorText}
+          </Text>
+        ) : null}
 
         <View style={{ marginTop: 'auto', width: '100%' }}>
           <BtnPrimary
@@ -98,4 +120,12 @@ const styles = StyleSheet.create({
   },
   payTitle: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.text },
   info: { width: '100%', padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  errorText: {
+    width: '100%',
+    color: colors.danger,
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    lineHeight: 18,
+    textAlign: 'center',
+  },
 });

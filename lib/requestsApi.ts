@@ -20,6 +20,8 @@ export type CreateRequestInput = {
   price: number;
   location: LocationType;
   note?: string | null;
+  name?: string | null;
+  phone?: string | null;
 };
 
 export type AcceptedMatch = {
@@ -77,6 +79,45 @@ async function fetchProfilesByIds(ids: string[]): Promise<Record<string, Profile
  * Ensure a profiles row exists for the signed-in user.
  * Profiles are created client-side (the auth.users trigger was intentionally removed).
  */
+/** Format Supabase / thrown errors for Alert + on-screen display. */
+export function formatApiError(err: unknown): string {
+  if (!err) return 'Unknown error';
+  if (typeof err === 'string') return err;
+  if (err instanceof Error) {
+    const anyErr = err as Error & { code?: string; details?: string; hint?: string };
+    const parts = [anyErr.message];
+    if (anyErr.code) parts.push(`code=${anyErr.code}`);
+    if (anyErr.details) parts.push(String(anyErr.details));
+    if (anyErr.hint) parts.push(String(anyErr.hint));
+    return parts.filter(Boolean).join(' · ');
+  }
+  if (typeof err === 'object') {
+    const o = err as { message?: string; code?: string; details?: string; hint?: string };
+    const parts = [o.message, o.code ? `code=${o.code}` : null, o.details, o.hint];
+    const joined = parts.filter(Boolean).join(' · ');
+    if (joined) return joined;
+  }
+  try {
+    return JSON.stringify(err);
+  } catch {
+    return String(err);
+  }
+}
+
+function isMissingRpcError(err: unknown): boolean {
+  const o = err as { code?: string; message?: string; details?: string };
+  const code = o?.code ?? '';
+  const msg = `${o?.message ?? ''} ${o?.details ?? ''}`.toLowerCase();
+  return (
+    code === 'PGRST202' ||
+    code === '42883' ||
+    msg.includes('could not find the function') ||
+    msg.includes('function public.ensure_my_profile') ||
+    msg.includes('function public.create_my_tutoring_request') ||
+    (msg.includes('does not exist') && msg.includes('function'))
+  );
+}
+
 export async function ensureOwnProfile(opts: {
   role: UserRole;
   name: string;
@@ -93,14 +134,25 @@ export async function ensureOwnProfile(opts: {
       : '') ||
     authData.user.email?.split('@')[0] ||
     'User';
+  const phone = opts.phone ?? null;
+
   const { error } = await sb.from('profiles').upsert({
     id,
     role: opts.role,
     name,
-    phone: opts.phone ?? null,
+    phone,
   });
-  if (error) throw error;
-  return id;
+  if (!error) return id;
+
+  // Fallback: security-definer RPC (003_fix_booking_create.sql)
+  const { error: rpcErr } = await sb.rpc('ensure_my_profile', {
+    p_role: opts.role,
+    p_name: name,
+    p_phone: phone,
+  });
+  if (!rpcErr) return id;
+  if (isMissingRpcError(rpcErr)) throw error;
+  throw rpcErr;
 }
 
 export function mapRequestToUi(
@@ -129,6 +181,26 @@ export function mapRequestToUi(
 
 export async function createTutoringRequest(input: CreateRequestInput): Promise<TutoringRequestRow> {
   const sb = requireSupabase();
+
+  // Prefer security-definer RPC (003) — upserts student profile + inserts request
+  const { data: rpcData, error: rpcErr } = await sb.rpc('create_my_tutoring_request', {
+    p_topic_key: input.topicKey,
+    p_subject: input.subject,
+    p_mins: input.mins,
+    p_price: input.price,
+    p_location: input.location,
+    p_note: input.note ?? null,
+    p_name: input.name ?? null,
+    p_phone: input.phone ?? null,
+  });
+  if (!rpcErr && rpcData) {
+    return rpcData as TutoringRequestRow;
+  }
+  if (rpcErr && !isMissingRpcError(rpcErr)) {
+    throw rpcErr;
+  }
+
+  // Fallback: direct insert (requires profiles row + RLS)
   const { data, error } = await sb
     .from('tutoring_requests')
     .insert({

@@ -163,6 +163,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const refreshTutorData = useCallback(async () => {
     if (!usingBackend || !user?.id) return;
     try {
+      // Tutors without a profiles row fail RLS on pending SELECT — ensure first
+      const meta = user.user_metadata ?? {};
+      const name =
+        profile?.name?.trim() ||
+        (typeof meta.name === 'string' ? meta.name : '') ||
+        user.email?.split('@')[0] ||
+        'Tutor';
+      await ensureOwnProfile({
+        role: 'tutor',
+        name,
+        phone: profile?.phone ?? (typeof meta.phone === 'string' ? meta.phone : null),
+      });
+
       const [pending, sessions, earnings] = await Promise.all([
         fetchPendingRequests(),
         fetchTutorSessions(user.id),
@@ -200,7 +213,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       console.warn('refreshTutorData', e);
       setTutorDataError(msg);
     }
-  }, [usingBackend, user?.id, tutorOnline, role]);
+  }, [usingBackend, user, profile, tutorOnline, role]);
 
   useEffect(() => {
     if (!usingBackend) return;
@@ -330,6 +343,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           price: booking.price,
           location: booking.location,
           note: note ?? null,
+          name,
+          phone: profile?.phone ?? null,
         });
         setLiveRequestId(row.id);
         setMatchedTutor(null);

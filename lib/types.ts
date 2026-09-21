@@ -168,6 +168,23 @@ export type Database = {
         Args: { p_request_id: string };
         Returns: undefined;
       };
+      ensure_my_profile: {
+        Args: { p_role: string; p_name: string; p_phone?: string | null };
+        Returns: Profile;
+      };
+      create_my_tutoring_request: {
+        Args: {
+          p_topic_key: string;
+          p_subject: string;
+          p_mins: number;
+          p_price: number;
+          p_location: string;
+          p_note?: string | null;
+          p_name?: string | null;
+          p_phone?: string | null;
+        };
+        Returns: TutoringRequestRow;
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

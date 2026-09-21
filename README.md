@@ -28,6 +28,7 @@ npx tsc --noEmit
 2. Open **SQL Editor**, paste and run in order:
    - [`supabase/migrations/001_initial.sql`](supabase/migrations/001_initial.sql) — tables, RLS, `accept_tutoring_request`
    - [`supabase/migrations/002_booking_polish.sql`](supabase/migrations/002_booking_polish.sql) — drops the broken signup trigger, enables realtime on requests/sessions, optional `decline_tutoring_request`
+   - [`supabase/migrations/003_fix_booking_create.sql`](supabase/migrations/003_fix_booking_create.sql) — **required after pull**: 2-hour `expires_at`, `ensure_my_profile` + `create_my_tutoring_request` RPCs (fixes “I've paid” / empty tutor pending)
 3. **Authentication → Providers**: enable Email. For local demos, you can disable “Confirm email”.
 4. **Project Settings → API**: copy **Project URL** and **anon public** key.
 5. Copy env example and fill keys:
@@ -51,6 +52,8 @@ Do **not** commit `.env` or secrets. Only `.env.example` is tracked.
 ### Profile creation note
 
 The `on_auth_user_created` DB trigger from `001_initial.sql` was **intentionally removed** (see `002_booking_polish.sql`) because it caused `Database error saving new user`. Profiles are upserted **client-side** on signup / session load, and again before inserting a tutoring request.
+
+**After pulling latest app code, run** [`supabase/migrations/003_fix_booking_create.sql`](supabase/migrations/003_fix_booking_create.sql) **in the Supabase SQL Editor.** It lengthens pending request expiry to **2 hours** and adds security-definer RPCs so “I've paid” can create a request even when client `profiles` upsert hits RLS, and so tutors without a profile row can still load pending requests after `ensureOwnProfile`.
 
 ### How to test two roles (live booking → accept → matched)
 
@@ -81,7 +84,7 @@ Mock mode (no `.env`): student still auto-matches after a short timer; tutor sti
 | Area | With Supabase configured | Without (mock) |
 |------|--------------------------|----------------|
 | Auth | Email/password + `profiles` role | Skipped — role picker demo |
-| Create request | Insert `tutoring_requests` after “I've paid” (profile upsert first) | Local only |
+| Create request | RPC `create_my_tutoring_request` (fallback insert) after “I've paid” | Local only |
 | Student matching | Polls / realtime until tutor accepts | Fake ~3.5s timer + skip |
 | Tutor pending list | Polls (~5s) + realtime + pull-to-refresh | Seeded mock requests + timer inject |
 | Accept / decline | RPC / update + session + earnings stub | Local state |
