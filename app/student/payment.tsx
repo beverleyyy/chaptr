@@ -1,24 +1,37 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '@/context/AppContext';
 import { Screen, Card, Display, BackHeader, BtnPrimary, DimText } from '@/components/ui';
+import { HANDOFF_NOTE, TOPICS } from '@/constants/mockData';
 import { colors, fonts } from '@/constants/theme';
 import { PayNowQR } from '@/components/PayNowQR';
 
 export default function Payment() {
-  const { booking } = useApp();
+  const { booking, submitBookingRequest, usingBackend, busyAction } = useApp();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const topic = TOPICS[booking.topicId];
 
-  const confirm = () => {
-    if (busy) return;
+  const confirm = async () => {
+    if (busy || busyAction) return;
     setBusy(true);
-    setTimeout(() => {
-      setBusy(false);
+    try {
+      if (usingBackend) {
+        await submitBookingRequest(topic.subject, HANDOFF_NOTE);
+      } else {
+        await new Promise((r) => setTimeout(r, 900));
+      }
       router.push('/student/matching');
-    }, 900);
+    } catch (e) {
+      Alert.alert(
+        'Could not create request',
+        e instanceof Error ? e.message : 'Something went wrong',
+      );
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -44,11 +57,18 @@ export default function Payment() {
           <DimText style={{ flex: 1, fontSize: 12, lineHeight: 17 }}>
             Scan with your banking app, then confirm below once you&apos;ve paid. Held for your tutor
             until payment clears.
+            {usingBackend
+              ? ' Confirming creates a live tutoring request for tutors.'
+              : ' (Mock payment — no money moves.)'}
           </DimText>
         </Card>
 
         <View style={{ marginTop: 'auto', width: '100%' }}>
-          <BtnPrimary label={busy ? 'Confirming payment…' : "I've paid"} onPress={confirm} disabled={busy} />
+          <BtnPrimary
+            label={busy || busyAction ? 'Confirming payment…' : "I've paid"}
+            onPress={confirm}
+            disabled={busy || busyAction}
+          />
         </View>
       </View>
     </Screen>

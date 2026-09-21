@@ -9,12 +9,24 @@ import React, {
 import {
   AVAILABILITY_DAYS,
   EXTRA_REQUEST,
+  EARNINGS,
   INITIAL_REQUESTS,
   REQUEST_ORDER,
   STYLE_TAGS,
   TUTOR_SUBJECTS,
   TutorRequest,
+  EarningRow,
 } from '@/constants/mockData';
+import { isSupabaseConfigured } from '@/lib/supabase';
+import {
+  acceptTutoringRequest,
+  createTutoringRequest,
+  declineTutoringRequest,
+  fetchPendingRequests,
+  fetchTutorEarnings,
+  fetchTutorSessions,
+} from '@/lib/requestsApi';
+import { useAuth } from '@/context/AuthContext';
 
 export type Role = 'student' | 'tutor';
 export type LocationType = 'inperson' | 'video';
@@ -48,8 +60,8 @@ type AppState = {
   acceptedRequestIds: string[];
   currentRequestId: string | null;
   setCurrentRequestId: (id: string | null) => void;
-  acceptRequest: (id: string) => void;
-  declineRequest: (id: string) => void;
+  acceptRequest: (id: string) => Promise<void>;
+  declineRequest: (id: string) => Promise<void>;
   cancelSession: (id: string) => void;
   cancelledSeedIds: string[];
   cancelConfirmId: string | null;
@@ -68,11 +80,22 @@ type AppState = {
   toggleStyleTag: (t: string) => void;
   toastRequestId: string | null;
   dismissToast: () => void;
+  /** Create a tutoring request after mock/real payment confirm. */
+  submitBookingRequest: (subject: string, note?: string | null) => Promise<string | null>;
+  refreshTutorData: () => Promise<void>;
+  earningsRows: EarningRow[];
+  weekEarningsTotal: number;
+  weekSessionCount: number;
+  usingBackend: boolean;
+  busyAction: boolean;
 };
 
 const AppContext = createContext<AppState | null>(null);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
+  const { profile, user } = useAuth();
+  const usingBackend = isSupabaseConfigured;
+
   const [role, setRole] = useState<Role>('student');
   const [studentConsented, setStudentConsented] = useState(false);
   const [tutorConsented, setTutorConsented] = useState(false);
@@ -83,15 +106,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     location: 'inperson',
   });
   const [tutorOnline, setTutorOnline] = useState(true);
-  const [requests, setRequests] = useState(INITIAL_REQUESTS);
-  const [pendingRequestIds, setPending] = useState<string[]>([...REQUEST_ORDER]);
+  const [requests, setRequests] = useState<Record<string, TutorRequest>>(
+    usingBackend ? {} : INITIAL_REQUESTS,
+  );
+  const [pendingRequestIds, setPending] = useState<string[]>(
+    usingBackend ? [] : [...REQUEST_ORDER],
+  );
   const [acceptedRequestIds, setAccepted] = useState<string[]>([]);
   const [currentRequestId, setCurrentRequestId] = useState<string | null>(null);
   const [cancelledSeedIds, setCancelledSeeds] = useState<string[]>([]);
   const [cancelConfirmId, setCancelConfirmId] = useState<string | null>(null);
-  const [availableBalance, setBalance] = useState(168);
+  const [availableBalance, setBalance] = useState(usingBackend ? 0 : 168);
   const [lastWithdrawal, setLastWithdrawal] = useState<Withdrawal | null>(null);
-  const [withdrawAmount, setWithdrawAmount] = useState(168);
+  const [withdrawAmount, setWithdrawAmount] = useState(usingBackend ? 0 : 168);
   const [tutorSubjects, setTutorSubjects] = useState(['A Maths', 'E Maths']);
   const [availabilityDays, setDays] = useState(
     Object.fromEntries(AVAILABILITY_DAYS.map((d) => [d.key, d.on])),
@@ -102,20 +129,95 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [styleTags, setStyleTags] = useState(['Patient', 'Exam-focused', 'Visual explainer']);
   const [toastRequestId, setToast] = useState<string | null>(null);
   const [extraInjected, setExtraInjected] = useState(false);
+  const [earningsRows, setEarningsRows] = useState<EarningRow[]>(usingBackend ? [] : EARNINGS);
+  const [weekEarningsTotal, setWeekTotal] = useState(usingBackend ? 0 : 184);
+  const [weekSessionCount, setWeekCount] = useState(usingBackend ? 0 : 9);
+  const [busyAction, setBusyAction] = useState(false);
+
+  // Sync role from authenticated profile when backend is on
+  useEffect(() => {
+    if (usingBackend && profile?.role) {
+      setRole(profile.role);
+    }
+  }, [usingBackend, profile?.role]);
 
   const setBooking = useCallback((b: Partial<Booking>) => {
     setBookingState((prev) => ({ ...prev, ...b }));
   }, []);
 
-  const acceptRequest = useCallback((id: string) => {
-    setPending((ids) => ids.filter((x) => x !== id));
-    setAccepted((ids) => (ids.includes(id) ? ids : [...ids, id]));
-  }, []);
+  const refreshTutorData = useCallback(async () => {
+    if (!usingBackend || !user?.id) return;
+    try {
+      const [pending, sessions, earnings] = await Promise.all([
+        fetchPendingRequests(),
+        fetchTutorSessions(user.id),
+        fetchTutorEarnings(user.id),
+      ]);
+      setRequests((prev) => ({
+        ...prev,
+        ...pending.requests,
+        ...sessions.requests,
+      }));
+      setPending(pending.pendingIds);
+      setAccepted(sessions.acceptedIds);
+      setEarningsRows(earnings.rows);
+      setBalance(earnings.availableBalance);
+      setWithdrawAmount(earnings.availableBalance);
+      setWeekTotal(earnings.weekTotal);
+      setWeekCount(earnings.weekCount);
+    } catch (e) {
+      console.warn('refreshTutorData', e);
+    }
+  }, [usingBackend, user?.id]);
 
-  const declineRequest = useCallback((id: string) => {
-    setPending((ids) => ids.filter((x) => x !== id));
-    setCurrentRequestId(null);
-  }, []);
+  useEffect(() => {
+    if (!usingBackend) return;
+    if (profile?.role === 'tutor' && user?.id) {
+      void refreshTutorData();
+      const t = setInterval(() => void refreshTutorData(), 15000);
+      return () => clearInterval(t);
+    }
+  }, [usingBackend, profile?.role, user?.id, refreshTutorData]);
+
+  const acceptRequest = useCallback(
+    async (id: string) => {
+      if (usingBackend) {
+        setBusyAction(true);
+        try {
+          await acceptTutoringRequest(id);
+          setPending((ids) => ids.filter((x) => x !== id));
+          setAccepted((ids) => (ids.includes(id) ? ids : [...ids, id]));
+          await refreshTutorData();
+        } finally {
+          setBusyAction(false);
+        }
+        return;
+      }
+      setPending((ids) => ids.filter((x) => x !== id));
+      setAccepted((ids) => (ids.includes(id) ? ids : [...ids, id]));
+    },
+    [usingBackend, refreshTutorData],
+  );
+
+  const declineRequest = useCallback(
+    async (id: string) => {
+      if (usingBackend) {
+        setBusyAction(true);
+        try {
+          await declineTutoringRequest(id);
+          setPending((ids) => ids.filter((x) => x !== id));
+          setCurrentRequestId(null);
+          await refreshTutorData();
+        } finally {
+          setBusyAction(false);
+        }
+        return;
+      }
+      setPending((ids) => ids.filter((x) => x !== id));
+      setCurrentRequestId(null);
+    },
+    [usingBackend, refreshTutorData],
+  );
 
   const cancelSession = useCallback((id: string) => {
     setAccepted((ids) => {
@@ -152,8 +254,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
-  // Countdown timers for pending requests
+  const submitBookingRequest = useCallback(
+    async (subject: string, note?: string | null) => {
+      if (!usingBackend) return null;
+      if (!user?.id) throw new Error('Sign in required to create a request');
+      setBusyAction(true);
+      try {
+        const row = await createTutoringRequest({
+          studentId: user.id,
+          topicKey: booking.topicId,
+          subject,
+          mins: booking.mins,
+          price: booking.price,
+          location: booking.location,
+          note: note ?? null,
+        });
+        return row.id;
+      } finally {
+        setBusyAction(false);
+      }
+    },
+    [usingBackend, user?.id, booking],
+  );
+
+  // Mock-only: countdown timers for pending requests
   useEffect(() => {
+    if (usingBackend) return;
     const tick = setInterval(() => {
       setRequests((prev) => {
         const next: typeof prev = { ...prev };
@@ -168,7 +294,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       });
     }, 1000);
     return () => clearInterval(tick);
-  }, []);
+  }, [usingBackend]);
+
+  // Backend: soft countdown from expires_at already in mapped secondsLeft — tick locally
+  useEffect(() => {
+    if (!usingBackend) return;
+    const tick = setInterval(() => {
+      setRequests((prev) => {
+        const next: typeof prev = { ...prev };
+        let changed = false;
+        Object.keys(next).forEach((id) => {
+          if (next[id].secondsLeft > 0) {
+            next[id] = { ...next[id], secondsLeft: next[id].secondsLeft - 1 };
+            changed = true;
+          }
+        });
+        return changed ? next : prev;
+      });
+    }, 1000);
+    return () => clearInterval(tick);
+  }, [usingBackend]);
 
   // Prune expired pending requests when secondsLeft hits 0
   useEffect(() => {
@@ -180,8 +325,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [requests, pendingRequestIds, currentRequestId]);
 
-  // Inject extra request after 14s
+  // Mock-only: inject extra request after 14s
   useEffect(() => {
+    if (usingBackend) return;
     if (extraInjected) return;
     const t = setTimeout(() => {
       setExtraInjected(true);
@@ -191,7 +337,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (role === 'tutor') setToast(EXTRA_REQUEST.id);
     }, 14000);
     return () => clearTimeout(t);
-  }, [extraInjected, tutorOnline, role]);
+  }, [extraInjected, tutorOnline, role, usingBackend]);
 
   const value = useMemo<AppState>(
     () => ({
@@ -230,6 +376,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       toggleStyleTag,
       toastRequestId,
       dismissToast: () => setToast(null),
+      submitBookingRequest,
+      refreshTutorData,
+      earningsRows,
+      weekEarningsTotal,
+      weekSessionCount,
+      usingBackend,
+      busyAction,
     }),
     [
       role,
@@ -259,6 +412,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       styleTags,
       toggleStyleTag,
       toastRequestId,
+      submitBookingRequest,
+      refreshTutorData,
+      earningsRows,
+      weekEarningsTotal,
+      weekSessionCount,
+      usingBackend,
+      busyAction,
     ],
   );
 
@@ -271,5 +431,4 @@ export function useApp() {
   return ctx;
 }
 
-// re-export helpers used by screens
 export { TUTOR_SUBJECTS, STYLE_TAGS };

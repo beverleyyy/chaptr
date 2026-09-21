@@ -93,16 +93,24 @@ export default function TutorPending() {
         <View style={{ marginTop: 'auto', gap: 10 }}>
           <BtnPrimary
             label="Accept request"
-            onPress={() => {
-              acceptRequest(id);
-              router.replace('/tutor/accepted');
+            onPress={async () => {
+              try {
+                await acceptRequest(id);
+                router.replace('/tutor/accepted');
+              } catch (e) {
+                console.warn(e);
+              }
             }}
           />
           <BtnGhost
             label="Decline"
-            onPress={() => {
-              declineRequest(id);
-              router.replace('/tutor/home');
+            onPress={async () => {
+              try {
+                await declineRequest(id);
+                router.replace('/tutor/home');
+              } catch (e) {
+                console.warn(e);
+              }
             }}
           />
         </View>

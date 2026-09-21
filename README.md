@@ -1,12 +1,12 @@
 # Chaptr
 
-Singapore tutoring marketplace demo — built with **Expo (React Native) + TypeScript + Expo Router**.
+Singapore tutoring marketplace — **Expo (React Native) + TypeScript + Expo Router**, with optional **Supabase** auth & Postgres.
 
 > A student books a topic, gets matched, and pays — then a tutor accepts.
 
-All data and payments are **mock only**. There is no backend, no real PayNow, and no money movement.
+**Payments remain mock** (PayNow QR / DBS withdraw UI only). When Supabase env vars are missing, the app keeps the original offline demo behaviour.
 
-## How to run
+## How to run (mock / offline)
 
 ```bash
 cd chaptr
@@ -14,7 +14,7 @@ npm install
 npx expo start
 ```
 
-Then press `i` (iOS simulator), `a` (Android emulator), or scan the QR with Expo Go. Web: `npx expo start --web`.
+No `.env` needed. Press `i` / `a` or scan with Expo Go. Web: `npx expo start --web`.
 
 ### Typecheck
 
@@ -22,13 +22,53 @@ Then press `i` (iOS simulator), `a` (Android emulator), or scan the QR with Expo
 npx tsc --noEmit
 ```
 
+## Supabase setup (real auth + data)
+
+1. Create a project at [supabase.com](https://supabase.com).
+2. Open **SQL Editor**, paste and run  
+   [`supabase/migrations/001_initial.sql`](supabase/migrations/001_initial.sql)  
+   (profiles, tutoring_requests, sessions, earnings, RLS, signup trigger, `accept_tutoring_request`).
+3. **Authentication → Providers**: enable Email. For local demos, you can disable “Confirm email”.
+4. **Project Settings → API**: copy **Project URL** and **anon public** key.
+5. Copy env example and fill keys:
+
+   ```bash
+   cp .env.example .env
+   # EXPO_PUBLIC_SUPABASE_URL=...
+   # EXPO_PUBLIC_SUPABASE_ANON_KEY=...
+   ```
+
+6. Restart Expo with a clean cache:
+
+   ```bash
+   npx expo start -c
+   ```
+
+7. Splash → **Sign in / Sign up** (email + password, student or tutor role) → role consent → existing UI flows.
+
+Do **not** commit `.env` or secrets. Only `.env.example` is tracked.
+
+### What becomes real vs still mock
+
+| Area | With Supabase configured | Without (mock) |
+|------|--------------------------|----------------|
+| Auth | Email/password + `profiles` role | Skipped — role picker demo |
+| Create request | Insert `tutoring_requests` after “I've paid” | Local only |
+| Tutor pending list | Polls pending rows | Seeded mock requests + timer inject |
+| Accept / decline | RPC / update + session + earnings stub | Local state |
+| Sessions / earnings basics | Loaded from `sessions` / `earnings` | Seeded mock lists |
+| PayNow / withdraw | **Always mock UI** | Mock |
+
+PII is minimal (name + optional phone) for PDPA-minded Singapore use.
+
 ## Screen map
 
 ### Shared
 | Screen | Route | Notes |
 |--------|-------|-------|
-| Splash | `/` | Accent splash → role picker after ~1.6s |
-| Role picker | `/role` | Student / Tutor demo switch |
+| Splash | `/` | → auth (if configured & logged out) or role picker |
+| Sign in / Sign up | `/auth/sign-in`, `/auth/sign-up` | Only when Supabase env is set |
+| Role picker | `/role` | Student / Tutor; sign out when authed |
 
 ### Student
 | Screen | Route | Flow |
@@ -36,7 +76,7 @@ npx tsc --noEmit
 | PDPA consent | `/student/consent` | First visit gate |
 | Home | `/student/home` | Subjects + chapter topics |
 | Book / duration | `/student/book` | Duration, location, handoff note |
-| Payment QR | `/student/payment` | **Mock** PayNow QR + “I've paid” |
+| Payment QR | `/student/payment` | **Mock** PayNow + create request when backend on |
 | Matching | `/student/matching` | Searching… (auto or skip) |
 | Matched | `/student/matched` | Tutor card + venue / Zoom |
 
@@ -54,32 +94,29 @@ npx tsc --noEmit
 | Withdraw | `/tutor/withdraw` | **Mock** DBS payout |
 | Withdraw success | `/tutor/withdraw-success` | Confirmation |
 
-Use **Switch role** on student home or **Switch to student view** on tutor home to jump back to `/role`.
-
 ## Design tokens
 
 - Accent `#F2600C` / accent-dark `#B34500`
 - Page background `#EEF0F3`
 - Font: **Plus Jakarta Sans** via `@expo-google-fonts/plus-jakarta-sans`
-- Cards with asymmetric rounded corners, chapter spines, G3 bands, amber tags, duration pills, status chips
 
 ## Stack
 
 - Expo SDK 57 + Expo Router
 - React Native + TypeScript
-- Local mock state (`context/AppContext.tsx`) — no API keys, no secrets
-
-## Payments note
-
-PayNow QR, UEN, DBS withdrawal, and all dollar amounts are **fictional demo UI**. Do not treat them as real payment rails.
+- `@supabase/supabase-js` + `expo-secure-store` (AsyncStorage fallback on web / large sessions)
+- Mock fallback in `context/AppContext.tsx` when `EXPO_PUBLIC_SUPABASE_*` are unset
 
 ## Project layout
 
 ```
-app/                 Expo Router screens
-components/          Shared UI + SessionCard + mock QR
-constants/           theme + mockData
-context/             AppProvider mock store
+app/                      Expo Router screens (+ auth/)
+components/               Shared UI + SessionCard + mock QR
+constants/                theme + mockData
+context/                  AuthProvider + AppProvider
+lib/                      supabase client, types, requests API
+supabase/migrations/      SQL for Supabase SQL editor
+.env.example              Public URL + anon key placeholders
 ```
 
 ## Prototype source

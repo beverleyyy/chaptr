@@ -2,6 +2,7 @@ import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '@/context/AppContext';
+import { useAuth } from '@/context/AuthContext';
 import { Screen, Card, Display, Tag, Avatar, Toggle, DimText } from '@/components/ui';
 import { SessionCard } from '@/components/SessionCard';
 import { formatSeconds, TOPICS } from '@/constants/mockData';
@@ -20,7 +21,11 @@ export default function TutorHome() {
     toastRequestId,
     dismissToast,
     setRole,
+    weekEarningsTotal,
+    weekSessionCount,
   } = useApp();
+  const { profile } = useAuth();
+  const displayName = profile?.name ?? 'Mr. Rajan';
 
   const openRequest = (id: string) => {
     setCurrentRequestId(id);
@@ -49,7 +54,7 @@ export default function TutorHome() {
       <View style={styles.header}>
         <View>
           <DimText>Good evening</DimText>
-          <Display style={{ fontSize: 22, marginTop: 2 }}>Mr. Rajan</Display>
+          <Display style={{ fontSize: 22, marginTop: 2 }}>{displayName}</Display>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
           <View style={{ alignItems: 'flex-end', gap: 6, marginTop: 4 }}>
@@ -137,8 +142,10 @@ export default function TutorHome() {
             </Pressable>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8, marginTop: 10 }}>
-            <Display style={{ fontSize: 26 }}>$184</Display>
-            <DimText>from 9 sessions</DimText>
+            <Display style={{ fontSize: 26 }}>${weekEarningsTotal}</Display>
+            <DimText>
+              from {weekSessionCount} session{weekSessionCount === 1 ? '' : 's'}
+            </DimText>
           </View>
         </Card>
 

@@ -2,12 +2,11 @@ import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useApp } from '@/context/AppContext';
 import { Screen, Card, Display, BtnPrimary, StatusChip, DimText } from '@/components/ui';
-import { EARNINGS } from '@/constants/mockData';
 import { colors, fonts } from '@/constants/theme';
 
 export default function TutorEarnings() {
   const router = useRouter();
-  const { availableBalance, lastWithdrawal } = useApp();
+  const { availableBalance, lastWithdrawal, earningsRows, weekEarningsTotal, weekSessionCount } = useApp();
 
   return (
     <Screen glow="left">
@@ -18,8 +17,13 @@ export default function TutorEarnings() {
         <Card style={{ padding: 18 }}>
           <Text style={styles.section}>This week</Text>
           <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8, marginTop: 10 }}>
-            <Display style={{ fontSize: 28 }}>$184</Display>
-            <DimText>9 sessions · avg $20.40</DimText>
+            <Display style={{ fontSize: 28 }}>${weekEarningsTotal}</Display>
+            <DimText>
+              {weekSessionCount} session{weekSessionCount === 1 ? '' : 's'}
+              {weekSessionCount > 0
+                ? ` · avg $${(weekEarningsTotal / weekSessionCount).toFixed(2)}`
+                : ''}
+            </DimText>
           </View>
         </Card>
 
@@ -45,8 +49,11 @@ export default function TutorEarnings() {
         <Card style={{ padding: 16, flex: 1 }}>
           <Text style={[styles.section, { marginBottom: 4 }]}>Recent sessions</Text>
           <ScrollView showsVerticalScrollIndicator={false}>
-            {EARNINGS.map((e, i) => (
-              <View key={i} style={[styles.earnRow, i === EARNINGS.length - 1 && { borderBottomWidth: 0 }]}>
+            {earningsRows.length === 0 ? (
+              <DimText style={{ marginTop: 12 }}>No sessions yet.</DimText>
+            ) : null}
+            {earningsRows.map((e, i) => (
+              <View key={i} style={[styles.earnRow, i === earningsRows.length - 1 && { borderBottomWidth: 0 }]}>
                 <View>
                   <Text style={styles.earnTitle}>
                     {e.subject} · Ch.{e.chapterSpine}

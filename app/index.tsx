@@ -1,16 +1,25 @@
 import { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '@/context/AuthContext';
 import { colors, fonts } from '@/constants/theme';
 
 export default function Splash() {
   const router = useRouter();
+  const { configured, loading, session } = useAuth();
 
   useEffect(() => {
-    const t = setTimeout(() => router.replace('/role'), 1600);
+    if (loading) return;
+    const t = setTimeout(() => {
+      if (configured && !session) {
+        router.replace('/auth/sign-in');
+      } else {
+        router.replace('/role');
+      }
+    }, configured ? 900 : 1600);
     return () => clearTimeout(t);
-  }, [router]);
+  }, [router, configured, loading, session]);
 
   return (
     <View style={styles.wrap}>
@@ -18,6 +27,7 @@ export default function Splash() {
         <Ionicons name="book-outline" size={34} color="#fff" />
       </View>
       <Text style={styles.title}>Chaptr</Text>
+      {loading ? <ActivityIndicator color="#fff" style={{ marginTop: 16 }} /> : null}
     </View>
   );
 }

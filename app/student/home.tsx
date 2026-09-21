@@ -3,6 +3,7 @@ import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '@/context/AppContext';
+import { useAuth } from '@/context/AuthContext';
 import { Screen, Card, Display, Band, Tag, Spine, DimText } from '@/components/ui';
 import { SUBJECTS, TOPICS, Topic } from '@/constants/mockData';
 import { colors, fonts } from '@/constants/theme';
@@ -10,7 +11,9 @@ import { colors, fonts } from '@/constants/theme';
 export default function StudentHome() {
   const [subject, setSubject] = useState<(typeof SUBJECTS)[number]['key']>('amaths');
   const { setBooking, setRole } = useApp();
+  const { profile } = useAuth();
   const router = useRouter();
+  const firstName = profile?.name?.split(' ')[0] ?? 'Aiden';
   const topics = Object.values(TOPICS).filter((t) => t.subjectKey === subject);
   const subjectLabel = SUBJECTS.find((s) => s.key === subject)?.label ?? '';
 
@@ -24,7 +27,7 @@ export default function StudentHome() {
       <View style={{ flex: 1 }}>
         <View style={styles.header}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <DimText>Welcome back, Aiden</DimText>
+            <DimText>Welcome back, {firstName}</DimText>
             <Pressable
               onPress={() => {
                 setRole('tutor');

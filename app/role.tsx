@@ -1,11 +1,13 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useApp } from '@/context/AppContext';
+import { useAuth } from '@/context/AuthContext';
 import { colors, fonts } from '@/constants/theme';
 
 export default function RolePicker() {
   const router = useRouter();
-  const { setRole, studentConsented, tutorConsented } = useApp();
+  const { setRole, studentConsented, tutorConsented, usingBackend } = useApp();
+  const { configured, profile, signOut, session } = useAuth();
 
   const goStudent = () => {
     setRole('student');
@@ -16,22 +18,63 @@ export default function RolePicker() {
     router.replace(tutorConsented ? '/tutor/home' : '/tutor/consent');
   };
 
+  // When signed in with a fixed profile role, prefer that path but still allow demo switch in mock
+  const lockedRole = configured && profile?.role ? profile.role : null;
+
   return (
     <View style={styles.wrap}>
       <Text style={styles.brand}>Chaptr</Text>
       <Text style={styles.sub}>
         A student books a topic, gets matched, and pays — then a tutor accepts.
       </Text>
-      <Text style={styles.hint}>Choose a demo role to continue</Text>
+      {configured && session ? (
+        <Text style={styles.hint}>
+          Signed in{profile?.name ? ` as ${profile.name}` : ''}
+          {lockedRole ? ` · ${lockedRole}` : ''}
+        </Text>
+      ) : (
+        <Text style={styles.hint}>
+          {usingBackend ? 'Choose how to continue' : 'Choose a demo role to continue'}
+        </Text>
+      )}
       <View style={styles.switch}>
-        <Pressable style={[styles.btn, styles.active]} onPress={goStudent}>
-          <Text style={styles.btnActiveText}>Student view</Text>
+        <Pressable
+          style={[styles.btn, (!lockedRole || lockedRole === 'student') && styles.active]}
+          onPress={goStudent}
+        >
+          <Text
+            style={
+              !lockedRole || lockedRole === 'student' ? styles.btnActiveText : styles.btnText
+            }
+          >
+            Student view
+          </Text>
         </Pressable>
-        <Pressable style={styles.btn} onPress={goTutor}>
-          <Text style={styles.btnText}>Tutor view</Text>
+        <Pressable
+          style={[styles.btn, lockedRole === 'tutor' && styles.active]}
+          onPress={goTutor}
+        >
+          <Text style={lockedRole === 'tutor' ? styles.btnActiveText : styles.btnText}>
+            Tutor view
+          </Text>
         </Pressable>
       </View>
-      <Text style={styles.note}>Mock data only — no real payments or accounts.</Text>
+      <Text style={styles.note}>
+        {configured
+          ? 'Connected to Supabase — requests & sessions sync when online. Payments remain mock.'
+          : 'Mock data only — set EXPO_PUBLIC_SUPABASE_* in .env for real auth & data.'}
+      </Text>
+      {configured && session ? (
+        <Pressable
+          style={{ marginTop: 16 }}
+          onPress={async () => {
+            await signOut();
+            router.replace('/auth/sign-in');
+          }}
+        >
+          <Text style={styles.signOut}>Sign out</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -66,6 +109,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
+    textAlign: 'center',
   },
   switch: {
     flexDirection: 'row',
@@ -96,5 +140,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#767B84',
     textAlign: 'center',
+    maxWidth: 340,
+    lineHeight: 18,
+  },
+  signOut: {
+    fontFamily: fonts.semiBold,
+    fontSize: 13,
+    color: colors.accent,
   },
 });
