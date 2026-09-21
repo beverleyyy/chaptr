@@ -217,7 +217,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!usingBackend) return;
-    if (profile?.role === 'tutor' && user?.id) {
+    // Fetch when auth profile is tutor OR the UI is in tutor mode (role picker).
+    if (user?.id && (profile?.role === 'tutor' || role === 'tutor')) {
       void refreshTutorData();
       const t = setInterval(() => void refreshTutorData(), 5000);
       const unsub = watchPendingRequestInserts(() => {
@@ -228,7 +229,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         unsub();
       };
     }
-  }, [usingBackend, profile?.role, user?.id, refreshTutorData]);
+  }, [usingBackend, profile?.role, role, user?.id, refreshTutorData]);
 
   const acceptRequest = useCallback(
     async (id: string) => {

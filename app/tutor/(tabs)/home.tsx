@@ -124,11 +124,13 @@ export default function TutorHome() {
         {!tutorOnline ? (
           <Card style={styles.centerCard}>
             <DimText style={{ textAlign: 'center', lineHeight: 20 }}>
-              You&apos;re offline — switch on above to start receiving requests.
+              You&apos;re offline — switch Online above to receive new requests. Pull to refresh
+              anytime to load what&apos;s already waiting.
             </DimText>
           </Card>
-        ) : (
-          <>
+        ) : null}
+
+        <>
             {pendingRequestIds.length > 0 ? (
               <>
                 <Text style={styles.reqHeading}>
@@ -174,8 +176,7 @@ export default function TutorHome() {
               if (!session) return null;
               return <SessionCard key={id} id={id} session={session} />;
             })}
-          </>
-        )}
+        </>
 
         <Card style={{ padding: 16 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
