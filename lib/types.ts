@@ -8,6 +8,7 @@ export type Profile = {
   id: string;
   role: UserRole;
   name: string;
+  full_name?: string | null;
   phone: string | null;
   created_at: string;
   updated_at: string;
@@ -63,6 +64,7 @@ export type Database = {
           id: string;
           role: UserRole;
           name: string;
+          full_name?: string | null;
           phone?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -70,6 +72,7 @@ export type Database = {
         Update: {
           role?: UserRole;
           name?: string;
+          full_name?: string | null;
           phone?: string | null;
           created_at?: string;
           updated_at?: string;
