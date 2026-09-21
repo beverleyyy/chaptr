@@ -170,11 +170,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         (typeof meta.name === 'string' ? meta.name : '') ||
         user.email?.split('@')[0] ||
         'Tutor';
-      await ensureOwnProfile({
-        role: 'tutor',
-        name,
-        phone: profile?.phone ?? (typeof meta.phone === 'string' ? meta.phone : null),
-      });
+      try {
+        await ensureOwnProfile({
+          role: 'tutor',
+          name,
+          phone: profile?.phone ?? (typeof meta.phone === 'string' ? meta.phone : null),
+        });
+      } catch (profileErr) {
+        console.warn('ensureOwnProfile tutor', profileErr);
+      }
 
       const [pending, sessions, earnings] = await Promise.all([
         fetchPendingRequests(),

@@ -40,7 +40,10 @@ async function loadProfile(userId: string): Promise<Profile | null> {
     console.warn('Failed to load profile', error.message);
     return null;
   }
-  return data as Profile | null;
+  if (!data) return null;
+  const row = data as Profile & { full_name?: string | null };
+  if (!row.name && row.full_name) row.name = row.full_name;
+  return row;
 }
 
 /** Client-side profile create when missing (auth trigger intentionally removed). */
@@ -59,14 +62,22 @@ async function ensureProfileFromUser(user: User): Promise<Profile | null> {
     'User';
   const phone = typeof meta.phone === 'string' ? meta.phone : null;
 
+  const { error: rpcErr } = await sb.rpc('ensure_my_profile', {
+    p_role: role,
+    p_name: name,
+    p_phone: phone,
+  });
+  if (!rpcErr) return loadProfile(user.id);
+
   const { error } = await sb.from('profiles').upsert({
     id: user.id,
     role,
     name,
+    full_name: name,
     phone,
   });
   if (error) {
-    console.warn('Profile ensure', error.message);
+    console.warn('Profile ensure', error.message, rpcErr?.message);
     return null;
   }
   return loadProfile(user.id);

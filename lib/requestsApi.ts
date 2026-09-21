@@ -69,9 +69,16 @@ async function fetchProfilesByIds(ids: string[]): Promise<Record<string, Profile
   if (!unique.length) return {};
   const sb = requireSupabase();
   const { data, error } = await sb.from('profiles').select('*').in('id', unique);
-  if (error) throw error;
+  if (error) {
+    console.warn('fetchProfilesByIds', error.message);
+    return {};
+  }
   const map: Record<string, Profile> = {};
-  for (const p of data ?? []) map[p.id] = p as Profile;
+  for (const row of data ?? []) {
+    const p = row as Profile & { full_name?: string | null };
+    if (!p.name && p.full_name) p.name = p.full_name;
+    map[p.id] = p;
+  }
   return map;
 }
 
@@ -136,23 +143,28 @@ export async function ensureOwnProfile(opts: {
     'User';
   const phone = opts.phone ?? null;
 
-  const { error } = await sb.from('profiles').upsert({
-    id,
-    role: opts.role,
-    name,
-    phone,
-  });
-  if (!error) return id;
-
-  // Fallback: security-definer RPC (003_fix_booking_create.sql)
+  // Prefer RPC (handles full_name + RLS). Fall back to direct upsert with full_name.
   const { error: rpcErr } = await sb.rpc('ensure_my_profile', {
     p_role: opts.role,
     p_name: name,
     p_phone: phone,
   });
   if (!rpcErr) return id;
-  if (isMissingRpcError(rpcErr)) throw error;
-  throw rpcErr;
+  if (!isMissingRpcError(rpcErr)) {
+    // Still try upsert below — then throw RPC error if that fails too
+  }
+
+  const { error } = await sb.from('profiles').upsert({
+    id,
+    role: opts.role,
+    name,
+    full_name: name,
+    phone,
+  });
+  if (!error) return id;
+
+  if (rpcErr && !isMissingRpcError(rpcErr)) throw rpcErr;
+  throw error;
 }
 
 export function mapRequestToUi(
