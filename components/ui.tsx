@@ -83,14 +83,19 @@ export function BtnPrimary({
 export function BtnGhost({
   label,
   onPress,
+  disabled,
   style,
 }: {
   label: string;
   onPress?: () => void;
+  disabled?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
   return (
-    <Pressable onPress={onPress} style={[styles.btnGhost, style]}>
+    <Pressable
+      onPress={disabled ? undefined : onPress}
+      style={[styles.btnGhost, disabled && styles.btnDisabled, style]}
+    >
       <Text style={styles.btnGhostText}>{label}</Text>
     </Pressable>
   );

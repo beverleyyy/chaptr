@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useApp } from '@/context/AppContext';
 import {
@@ -32,19 +32,60 @@ export default function TutorPending() {
     acceptRequest,
     declineRequest,
     pendingRequestIds,
+    busyAction,
+    usingBackend,
+    refreshTutorData,
   } = useApp();
+  const [acting, setActing] = useState(false);
 
   const id = currentRequestId;
   const r = id ? requests[id] : null;
 
   useEffect(() => {
+    if (usingBackend) void refreshTutorData();
+  }, [usingBackend, refreshTutorData]);
+
+  useEffect(() => {
     if (!id || !pendingRequestIds.includes(id)) {
+      // Don't bounce away while accept just succeeded (navigating to accepted)
+      if (acting) return;
       router.replace('/tutor/home');
     }
-  }, [id, pendingRequestIds, router]);
+  }, [id, pendingRequestIds, router, acting]);
 
   if (!r || !id) return null;
   const t = TOPICS[r.topicKey];
+  const busy = acting || busyAction;
+
+  const onAccept = async () => {
+    if (busy) return;
+    setActing(true);
+    try {
+      await acceptRequest(id);
+      router.replace('/tutor/accepted');
+    } catch (e) {
+      setActing(false);
+      Alert.alert(
+        'Could not accept',
+        e instanceof Error ? e.message : 'Something went wrong',
+      );
+    }
+  };
+
+  const onDecline = async () => {
+    if (busy) return;
+    setActing(true);
+    try {
+      await declineRequest(id);
+      router.replace('/tutor/home');
+    } catch (e) {
+      setActing(false);
+      Alert.alert(
+        'Could not decline',
+        e instanceof Error ? e.message : 'Something went wrong',
+      );
+    }
+  };
 
   return (
     <Screen glow="left">
@@ -71,7 +112,7 @@ export default function TutorPending() {
               <Band label="G3" />
             </View>
             <DimText style={{ marginTop: 4, fontSize: 12.5 }}>
-              Chapter {t.spine} · {t.title}
+              Chapter {t?.spine ?? '?'} · {t?.title ?? r.subject}
             </DimText>
           </View>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
@@ -92,27 +133,11 @@ export default function TutorPending() {
 
         <View style={{ marginTop: 'auto', gap: 10 }}>
           <BtnPrimary
-            label="Accept request"
-            onPress={async () => {
-              try {
-                await acceptRequest(id);
-                router.replace('/tutor/accepted');
-              } catch (e) {
-                console.warn(e);
-              }
-            }}
+            label={busy ? 'Working…' : 'Accept request'}
+            onPress={onAccept}
+            disabled={busy}
           />
-          <BtnGhost
-            label="Decline"
-            onPress={async () => {
-              try {
-                await declineRequest(id);
-                router.replace('/tutor/home');
-              } catch (e) {
-                console.warn(e);
-              }
-            }}
-          />
+          <BtnGhost label="Decline" onPress={onDecline} disabled={busy} />
         </View>
       </ScrollView>
     </Screen>

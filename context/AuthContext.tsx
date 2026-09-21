@@ -43,6 +43,35 @@ async function loadProfile(userId: string): Promise<Profile | null> {
   return data as Profile | null;
 }
 
+/** Client-side profile create when missing (auth trigger intentionally removed). */
+async function ensureProfileFromUser(user: User): Promise<Profile | null> {
+  const sb = getSupabase();
+  if (!sb) return null;
+  const existing = await loadProfile(user.id);
+  if (existing) return existing;
+
+  const meta = user.user_metadata ?? {};
+  const roleRaw = typeof meta.role === 'string' ? meta.role : 'student';
+  const role: UserRole = roleRaw === 'tutor' ? 'tutor' : 'student';
+  const name =
+    (typeof meta.name === 'string' && meta.name.trim()) ||
+    user.email?.split('@')[0] ||
+    'User';
+  const phone = typeof meta.phone === 'string' ? meta.phone : null;
+
+  const { error } = await sb.from('profiles').upsert({
+    id: user.id,
+    role,
+    name,
+    phone,
+  });
+  if (error) {
+    console.warn('Profile ensure', error.message);
+    return null;
+  }
+  return loadProfile(user.id);
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(isSupabaseConfigured);
   const [session, setSession] = useState<Session | null>(null);
@@ -75,7 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!mounted) return;
       setSession(data.session);
       if (data.session?.user) {
-        const p = await loadProfile(data.session.user.id);
+        const p = await ensureProfileFromUser(data.session.user);
         if (mounted) setProfile(p);
       }
       if (mounted) setLoading(false);
@@ -84,7 +113,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: sub } = sb.auth.onAuthStateChange(async (_event, next) => {
       setSession(next);
       if (next?.user) {
-        const p = await loadProfile(next.user.id);
+        const p = await ensureProfileFromUser(next.user);
         setProfile(p);
       } else {
         setProfile(null);

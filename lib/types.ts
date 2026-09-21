@@ -164,6 +164,10 @@ export type Database = {
         Args: { p_request_id: string };
         Returns: SessionRow;
       };
+      decline_tutoring_request: {
+        Args: { p_request_id: string };
+        Returns: undefined;
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

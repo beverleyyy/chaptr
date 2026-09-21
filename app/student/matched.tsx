@@ -20,10 +20,14 @@ import {
 import { colors, fonts } from '@/constants/theme';
 
 export default function Matched() {
-  const { booking } = useApp();
+  const { booking, matchedTutor, usingBackend } = useApp();
   const router = useRouter();
-  const topic = TOPICS[booking.topicId];
-  const isVideo = booking.location === 'video';
+  const topic = TOPICS[matchedTutor?.topicKey ?? booking.topicId] ?? TOPICS[booking.topicId];
+  const isVideo = (matchedTutor?.location ?? booking.location) === 'video';
+  const tutorName = matchedTutor?.name ?? 'Mr. Rajan';
+  const tutorInitials = matchedTutor?.initials ?? 'MR';
+  const whenLabel = matchedTutor?.scheduledLabel ?? 'Today, 7:30pm';
+  const mins = matchedTutor?.mins ?? booking.mins;
 
   return (
     <Screen>
@@ -40,11 +44,14 @@ export default function Matched() {
 
         <Card style={styles.tutorCard}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <Avatar initials="MR" />
+            <Avatar initials={tutorInitials} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.name}>Mr. Rajan</Text>
+              <Text style={styles.name}>{tutorName}</Text>
               <Text style={styles.stars}>
-                ★ 4.9 <Text style={{ color: colors.textDim, fontFamily: fonts.medium }}>(128 sessions)</Text>
+                ★ 4.9{' '}
+                <Text style={{ color: colors.textDim, fontFamily: fonts.medium }}>
+                  {usingBackend && matchedTutor ? '(Chaptr match)' : '(128 sessions)'}
+                </Text>
               </Text>
             </View>
           </View>
@@ -56,7 +63,7 @@ export default function Matched() {
           <View style={styles.divider} />
           <Text style={styles.topic}>{topic.title}</Text>
           <DimText style={{ marginTop: 4 }}>
-            Today, 7:30pm · {durationLabel(booking.mins)}
+            {whenLabel} · {durationLabel(mins)}
           </DimText>
         </Card>
 

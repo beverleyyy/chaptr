@@ -1,12 +1,21 @@
-import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { useCallback } from 'react';
+import {
+  View,
+  Text,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  RefreshControl,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
-import { Screen, Card, Display, Tag, Avatar, Toggle, DimText } from '@/components/ui';
+import { Screen, Card, Display, Tag, Avatar, Toggle, DimText, BtnGhost } from '@/components/ui';
 import { SessionCard } from '@/components/SessionCard';
 import { formatSeconds, TOPICS } from '@/constants/mockData';
 import { colors, fonts } from '@/constants/theme';
+import { useState } from 'react';
 
 export default function TutorHome() {
   const router = useRouter();
@@ -23,15 +32,29 @@ export default function TutorHome() {
     setRole,
     weekEarningsTotal,
     weekSessionCount,
+    usingBackend,
+    refreshTutorData,
+    tutorDataError,
   } = useApp();
   const { profile } = useAuth();
   const displayName = profile?.name ?? 'Mr. Rajan';
+  const [refreshing, setRefreshing] = useState(false);
 
   const openRequest = (id: string) => {
     setCurrentRequestId(id);
     dismissToast();
     router.push('/tutor/pending');
   };
+
+  const onRefresh = useCallback(async () => {
+    if (!usingBackend) return;
+    setRefreshing(true);
+    try {
+      await refreshTutorData();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [usingBackend, refreshTutorData]);
 
   return (
     <Screen glow="left">
@@ -42,7 +65,7 @@ export default function TutorHome() {
             <Text style={styles.toastLabel}>New request</Text>
             <Text style={styles.toastText}>
               {requests[toastRequestId].name} · {requests[toastRequestId].subject} Ch.
-              {TOPICS[requests[toastRequestId].topicKey].spine}
+              {TOPICS[requests[toastRequestId].topicKey]?.spine ?? '?'}
             </Text>
           </View>
           <Pressable style={styles.toastBtn} onPress={() => openRequest(toastRequestId)}>
@@ -73,6 +96,11 @@ export default function TutorHome() {
         style={{ flex: 1 }}
         contentContainerStyle={{ padding: 22, gap: 14, paddingTop: 16 }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          usingBackend ? (
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />
+          ) : undefined
+        }
       >
         <Pressable
           onPress={() => {
@@ -82,6 +110,16 @@ export default function TutorHome() {
         >
           <Text style={styles.switchLink}>Switch to student view</Text>
         </Pressable>
+
+        {tutorDataError ? (
+          <Card style={styles.centerCard}>
+            <Text style={styles.errorTitle}>Couldn&apos;t load requests</Text>
+            <DimText style={{ textAlign: 'center', lineHeight: 18, marginTop: 6 }}>
+              {tutorDataError}
+            </DimText>
+            <BtnGhost label="Retry" onPress={() => void refreshTutorData()} style={{ marginTop: 12 }} />
+          </Card>
+        ) : null}
 
         {!tutorOnline ? (
           <Card style={styles.centerCard}>
@@ -100,6 +138,7 @@ export default function TutorHome() {
                 </Text>
                 {pendingRequestIds.map((id) => {
                   const r = requests[id];
+                  if (!r) return null;
                   const t = TOPICS[r.topicKey];
                   return (
                     <Pressable key={id} onPress={() => openRequest(id)}>
@@ -111,7 +150,7 @@ export default function TutorHome() {
                             <Tag label={formatSeconds(r.secondsLeft)} amber />
                           </View>
                           <Text style={styles.reqLine}>
-                            {r.name} · {r.subject} Ch.{t.spine} · {r.time}
+                            {r.name} · {r.subject} Ch.{t?.spine ?? '?'} · {r.time}
                           </Text>
                         </View>
                         <Ionicons name="chevron-forward" size={17} color={colors.textDim} />
@@ -122,15 +161,19 @@ export default function TutorHome() {
               </>
             ) : (
               <Card style={styles.centerCard}>
-                <DimText style={{ textAlign: 'center' }}>
-                  No new requests right now — we&apos;ll notify you the moment one comes in.
+                <DimText style={{ textAlign: 'center', lineHeight: 20 }}>
+                  {usingBackend
+                    ? 'No pending requests right now. Pull to refresh — new bookings appear within a few seconds.'
+                    : "No new requests right now — we'll notify you the moment one comes in."}
                 </DimText>
               </Card>
             )}
 
-            {acceptedRequestIds.map((id) => (
-              <SessionCard key={id} id={id} session={requests[id]} />
-            ))}
+            {acceptedRequestIds.map((id) => {
+              const session = requests[id];
+              if (!session) return null;
+              return <SessionCard key={id} id={id} session={session} />;
+            })}
           </>
         )}
 
@@ -172,6 +215,12 @@ const styles = StyleSheet.create({
   onlineLabel: { fontFamily: fonts.bold, fontSize: 11.5, color: colors.accent },
   switchLink: { fontFamily: fonts.semiBold, fontSize: 12, color: colors.accent },
   centerCard: { padding: 18 },
+  errorTitle: {
+    fontFamily: fonts.semiBold,
+    fontSize: 14,
+    color: colors.danger,
+    textAlign: 'center',
+  },
   reqHeading: {
     fontFamily: fonts.bold,
     fontSize: 11,

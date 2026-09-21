@@ -25,9 +25,9 @@ npx tsc --noEmit
 ## Supabase setup (real auth + data)
 
 1. Create a project at [supabase.com](https://supabase.com).
-2. Open **SQL Editor**, paste and run  
-   [`supabase/migrations/001_initial.sql`](supabase/migrations/001_initial.sql)  
-   (profiles, tutoring_requests, sessions, earnings, RLS, signup trigger, `accept_tutoring_request`).
+2. Open **SQL Editor**, paste and run in order:
+   - [`supabase/migrations/001_initial.sql`](supabase/migrations/001_initial.sql) — tables, RLS, `accept_tutoring_request`
+   - [`supabase/migrations/002_booking_polish.sql`](supabase/migrations/002_booking_polish.sql) — drops the broken signup trigger, enables realtime on requests/sessions, optional `decline_tutoring_request`
 3. **Authentication → Providers**: enable Email. For local demos, you can disable “Confirm email”.
 4. **Project Settings → API**: copy **Project URL** and **anon public** key.
 5. Copy env example and fill keys:
@@ -48,14 +48,44 @@ npx tsc --noEmit
 
 Do **not** commit `.env` or secrets. Only `.env.example` is tracked.
 
+### Profile creation note
+
+The `on_auth_user_created` DB trigger from `001_initial.sql` was **intentionally removed** (see `002_booking_polish.sql`) because it caused `Database error saving new user`. Profiles are upserted **client-side** on signup / session load, and again before inserting a tutoring request.
+
+### How to test two roles (live booking → accept → matched)
+
+Use **two browsers** (or one normal + one private window) so each stays signed in as a different account.
+
+1. **Browser A — Student**
+   - Sign up as **Student** (e.g. `student@example.com`).
+   - Consent → Home → pick a topic → Book → Payment → **I've paid**.
+   - You should land on **Finding your tutor** and stay there (no fake auto-match). A `tutoring_requests` row is created with your auth user id.
+
+2. **Browser B — Tutor**
+   - Sign up as **Tutor** (e.g. `tutor@example.com`).
+   - Consent → stay **Online** on the tutor home.
+   - Within a few seconds (poll / realtime / pull-to-refresh) the pending request appears.
+   - Open it → **Accept request**.
+
+3. **Back to Browser A**
+   - Matching should exit to **Matched** with the **real tutor name** from `profiles`.
+   - Tutor home / schedule / earnings should show the new session + earnings stub.
+
+4. **Decline path (optional)**
+   - Student pays again → Tutor opens request → **Decline** → student matching shows a clear “no match” state.
+
+Mock mode (no `.env`): student still auto-matches after a short timer; tutor still sees seeded demo requests.
+
 ### What becomes real vs still mock
 
 | Area | With Supabase configured | Without (mock) |
 |------|--------------------------|----------------|
 | Auth | Email/password + `profiles` role | Skipped — role picker demo |
-| Create request | Insert `tutoring_requests` after “I've paid” | Local only |
-| Tutor pending list | Polls pending rows | Seeded mock requests + timer inject |
+| Create request | Insert `tutoring_requests` after “I've paid” (profile upsert first) | Local only |
+| Student matching | Polls / realtime until tutor accepts | Fake ~3.5s timer + skip |
+| Tutor pending list | Polls (~5s) + realtime + pull-to-refresh | Seeded mock requests + timer inject |
 | Accept / decline | RPC / update + session + earnings stub | Local state |
+| Matched screen | Real tutor name from profiles | Demo “Mr. Rajan” |
 | Sessions / earnings basics | Loaded from `sessions` / `earnings` | Seeded mock lists |
 | PayNow / withdraw | **Always mock UI** | Mock |
 
@@ -77,7 +107,7 @@ PII is minimal (name + optional phone) for PDPA-minded Singapore use.
 | Home | `/student/home` | Subjects + chapter topics |
 | Book / duration | `/student/book` | Duration, location, handoff note |
 | Payment QR | `/student/payment` | **Mock** PayNow + create request when backend on |
-| Matching | `/student/matching` | Searching… (auto or skip) |
+| Matching | `/student/matching` | Wait for accept (live) or demo timer |
 | Matched | `/student/matched` | Tutor card + venue / Zoom |
 
 ### Tutor

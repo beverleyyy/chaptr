@@ -4,6 +4,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import {
@@ -22,9 +23,12 @@ import {
   acceptTutoringRequest,
   createTutoringRequest,
   declineTutoringRequest,
+  ensureOwnProfile,
   fetchPendingRequests,
   fetchTutorEarnings,
   fetchTutorSessions,
+  watchPendingRequestInserts,
+  type MatchedTutorInfo,
 } from '@/lib/requestsApi';
 import { useAuth } from '@/context/AuthContext';
 
@@ -60,6 +64,12 @@ type AppState = {
   acceptedRequestIds: string[];
   currentRequestId: string | null;
   setCurrentRequestId: (id: string | null) => void;
+  /** Student request created after "I've paid" (backend). */
+  liveRequestId: string | null;
+  setLiveRequestId: (id: string | null) => void;
+  /** Populated when a tutor accepts the live student request. */
+  matchedTutor: MatchedTutorInfo | null;
+  setMatchedTutor: (m: MatchedTutorInfo | null) => void;
   acceptRequest: (id: string) => Promise<void>;
   declineRequest: (id: string) => Promise<void>;
   cancelSession: (id: string) => void;
@@ -83,6 +93,7 @@ type AppState = {
   /** Create a tutoring request after mock/real payment confirm. */
   submitBookingRequest: (subject: string, note?: string | null) => Promise<string | null>;
   refreshTutorData: () => Promise<void>;
+  tutorDataError: string | null;
   earningsRows: EarningRow[];
   weekEarningsTotal: number;
   weekSessionCount: number;
@@ -93,7 +104,7 @@ type AppState = {
 const AppContext = createContext<AppState | null>(null);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const { profile, user } = useAuth();
+  const { profile, user, refreshProfile } = useAuth();
   const usingBackend = isSupabaseConfigured;
 
   const [role, setRole] = useState<Role>('student');
@@ -114,6 +125,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   );
   const [acceptedRequestIds, setAccepted] = useState<string[]>([]);
   const [currentRequestId, setCurrentRequestId] = useState<string | null>(null);
+  const [liveRequestId, setLiveRequestId] = useState<string | null>(null);
+  const [matchedTutor, setMatchedTutor] = useState<MatchedTutorInfo | null>(null);
   const [cancelledSeedIds, setCancelledSeeds] = useState<string[]>([]);
   const [cancelConfirmId, setCancelConfirmId] = useState<string | null>(null);
   const [availableBalance, setBalance] = useState(usingBackend ? 0 : 168);
@@ -133,6 +146,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [weekEarningsTotal, setWeekTotal] = useState(usingBackend ? 0 : 184);
   const [weekSessionCount, setWeekCount] = useState(usingBackend ? 0 : 9);
   const [busyAction, setBusyAction] = useState(false);
+  const [tutorDataError, setTutorDataError] = useState<string | null>(null);
+  const knownPendingRef = useRef<Set<string>>(new Set());
 
   // Sync role from authenticated profile when backend is on
   useEffect(() => {
@@ -153,6 +168,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         fetchTutorSessions(user.id),
         fetchTutorEarnings(user.id),
       ]);
+
+      // Toast for newly seen pending requests
+      const prevKnown = knownPendingRef.current;
+      const nextKnown = new Set(pending.pendingIds);
+      if (prevKnown.size > 0) {
+        for (const id of pending.pendingIds) {
+          if (!prevKnown.has(id) && tutorOnline && role === 'tutor') {
+            setToast(id);
+            break;
+          }
+        }
+      }
+      knownPendingRef.current = nextKnown;
+
       setRequests((prev) => ({
         ...prev,
         ...pending.requests,
@@ -165,17 +194,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setWithdrawAmount(earnings.availableBalance);
       setWeekTotal(earnings.weekTotal);
       setWeekCount(earnings.weekCount);
+      setTutorDataError(null);
     } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to load tutor data';
       console.warn('refreshTutorData', e);
+      setTutorDataError(msg);
     }
-  }, [usingBackend, user?.id]);
+  }, [usingBackend, user?.id, tutorOnline, role]);
 
   useEffect(() => {
     if (!usingBackend) return;
     if (profile?.role === 'tutor' && user?.id) {
       void refreshTutorData();
-      const t = setInterval(() => void refreshTutorData(), 15000);
-      return () => clearInterval(t);
+      const t = setInterval(() => void refreshTutorData(), 5000);
+      const unsub = watchPendingRequestInserts(() => {
+        void refreshTutorData();
+      });
+      return () => {
+        clearInterval(t);
+        unsub();
+      };
     }
   }, [usingBackend, profile?.role, user?.id, refreshTutorData]);
 
@@ -187,6 +225,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           await acceptTutoringRequest(id);
           setPending((ids) => ids.filter((x) => x !== id));
           setAccepted((ids) => (ids.includes(id) ? ids : [...ids, id]));
+          setCurrentRequestId(id);
           await refreshTutorData();
         } finally {
           setBusyAction(false);
@@ -195,6 +234,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
       setPending((ids) => ids.filter((x) => x !== id));
       setAccepted((ids) => (ids.includes(id) ? ids : [...ids, id]));
+      setCurrentRequestId(id);
     },
     [usingBackend, refreshTutorData],
   );
@@ -258,8 +298,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     async (subject: string, note?: string | null) => {
       if (!usingBackend) return null;
       if (!user?.id) throw new Error('Sign in required to create a request');
+
       setBusyAction(true);
       try {
+        if (profile?.role === 'tutor') {
+          throw new Error('Tutor accounts cannot create student booking requests');
+        }
+
+        const name =
+          profile?.name?.trim() ||
+          (typeof user.user_metadata?.name === 'string' ? user.user_metadata.name : '') ||
+          user.email?.split('@')[0] ||
+          'Student';
+
+        // Profiles are client-created (auth trigger intentionally removed)
+        const studentId = await ensureOwnProfile({
+          role: 'student',
+          name,
+          phone: profile?.phone ?? null,
+        });
+        if (studentId !== user.id) {
+          throw new Error('Profile id mismatch');
+        }
+        await refreshProfile();
+
         const row = await createTutoringRequest({
           studentId: user.id,
           topicKey: booking.topicId,
@@ -269,17 +331,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           location: booking.location,
           note: note ?? null,
         });
+        setLiveRequestId(row.id);
+        setMatchedTutor(null);
         return row.id;
       } finally {
         setBusyAction(false);
       }
     },
-    [usingBackend, user?.id, booking],
+    [usingBackend, user, profile, booking, refreshProfile],
   );
 
-  // Mock-only: countdown timers for pending requests
+  // Countdown timers for pending request UI
   useEffect(() => {
-    if (usingBackend) return;
     const tick = setInterval(() => {
       setRequests((prev) => {
         const next: typeof prev = { ...prev };
@@ -294,26 +357,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       });
     }, 1000);
     return () => clearInterval(tick);
-  }, [usingBackend]);
-
-  // Backend: soft countdown from expires_at already in mapped secondsLeft — tick locally
-  useEffect(() => {
-    if (!usingBackend) return;
-    const tick = setInterval(() => {
-      setRequests((prev) => {
-        const next: typeof prev = { ...prev };
-        let changed = false;
-        Object.keys(next).forEach((id) => {
-          if (next[id].secondsLeft > 0) {
-            next[id] = { ...next[id], secondsLeft: next[id].secondsLeft - 1 };
-            changed = true;
-          }
-        });
-        return changed ? next : prev;
-      });
-    }, 1000);
-    return () => clearInterval(tick);
-  }, [usingBackend]);
+  }, []);
 
   // Prune expired pending requests when secondsLeft hits 0
   useEffect(() => {
@@ -356,6 +400,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       acceptedRequestIds,
       currentRequestId,
       setCurrentRequestId,
+      liveRequestId,
+      setLiveRequestId,
+      matchedTutor,
+      setMatchedTutor,
       acceptRequest,
       declineRequest,
       cancelSession,
@@ -378,6 +426,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       dismissToast: () => setToast(null),
       submitBookingRequest,
       refreshTutorData,
+      tutorDataError,
       earningsRows,
       weekEarningsTotal,
       weekSessionCount,
@@ -395,6 +444,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       pendingRequestIds,
       acceptedRequestIds,
       currentRequestId,
+      liveRequestId,
+      matchedTutor,
       acceptRequest,
       declineRequest,
       cancelSession,
@@ -414,6 +465,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       toastRequestId,
       submitBookingRequest,
       refreshTutorData,
+      tutorDataError,
       earningsRows,
       weekEarningsTotal,
       weekSessionCount,

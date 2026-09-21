@@ -1,8 +1,16 @@
-import { requireSupabase } from '@/lib/supabase';
+import { requireSupabase, getSupabase } from '@/lib/supabase';
 import { abbreviatedName, initialsFromName } from '@/lib/privacy';
-import type { EarningRowDb, LocationType, Profile, SessionRow, TutoringRequestRow } from '@/lib/types';
+import type {
+  EarningRowDb,
+  LocationType,
+  Profile,
+  SessionRow,
+  TutoringRequestRow,
+  UserRole,
+} from '@/lib/types';
 import type { EarningRow, TutorRequest } from '@/constants/mockData';
 import { TOPICS } from '@/constants/mockData';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 export type CreateRequestInput = {
   studentId: string;
@@ -12,6 +20,25 @@ export type CreateRequestInput = {
   price: number;
   location: LocationType;
   note?: string | null;
+};
+
+export type AcceptedMatch = {
+  request: TutoringRequestRow;
+  session: SessionRow;
+  tutor: Profile;
+};
+
+export type MatchedTutorInfo = {
+  requestId: string;
+  sessionId: string;
+  tutorId: string;
+  name: string;
+  initials: string;
+  subject: string;
+  topicKey: string;
+  mins: number;
+  location: LocationType;
+  scheduledLabel: string | null;
 };
 
 function secondsUntil(iso: string): number {
@@ -44,6 +71,36 @@ async function fetchProfilesByIds(ids: string[]): Promise<Record<string, Profile
   const map: Record<string, Profile> = {};
   for (const p of data ?? []) map[p.id] = p as Profile;
   return map;
+}
+
+/**
+ * Ensure a profiles row exists for the signed-in user.
+ * Profiles are created client-side (the auth.users trigger was intentionally removed).
+ */
+export async function ensureOwnProfile(opts: {
+  role: UserRole;
+  name: string;
+  phone?: string | null;
+}): Promise<string> {
+  const sb = requireSupabase();
+  const { data: authData, error: authErr } = await sb.auth.getUser();
+  if (authErr || !authData.user) throw new Error('Sign in required');
+  const id = authData.user.id;
+  const name =
+    opts.name.trim() ||
+    (typeof authData.user.user_metadata?.name === 'string'
+      ? authData.user.user_metadata.name
+      : '') ||
+    authData.user.email?.split('@')[0] ||
+    'User';
+  const { error } = await sb.from('profiles').upsert({
+    id,
+    role: opts.role,
+    name,
+    phone: opts.phone ?? null,
+  });
+  if (error) throw error;
+  return id;
 }
 
 export function mapRequestToUi(
@@ -90,6 +147,115 @@ export async function createTutoringRequest(input: CreateRequestInput): Promise<
   return data as TutoringRequestRow;
 }
 
+export async function fetchTutoringRequest(requestId: string): Promise<TutoringRequestRow | null> {
+  const sb = requireSupabase();
+  const { data, error } = await sb
+    .from('tutoring_requests')
+    .select('*')
+    .eq('id', requestId)
+    .maybeSingle();
+  if (error) throw error;
+  return (data as TutoringRequestRow | null) ?? null;
+}
+
+export async function fetchAcceptedMatch(requestId: string): Promise<AcceptedMatch | null> {
+  const sb = requireSupabase();
+  const { data: request, error } = await sb
+    .from('tutoring_requests')
+    .select('*')
+    .eq('id', requestId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!request || (request as TutoringRequestRow).status !== 'accepted') return null;
+
+  const req = request as TutoringRequestRow;
+  const { data: session, error: sErr } = await sb
+    .from('sessions')
+    .select('*')
+    .eq('request_id', requestId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (sErr) throw sErr;
+  if (!session) return null;
+
+  const sess = session as SessionRow;
+  const profiles = await fetchProfilesByIds([sess.tutor_id]);
+  const tutor = profiles[sess.tutor_id];
+  if (!tutor) return null;
+
+  return { request: req, session: sess, tutor };
+}
+
+export function toMatchedTutorInfo(match: AcceptedMatch): MatchedTutorInfo {
+  return {
+    requestId: match.request.id,
+    sessionId: match.session.id,
+    tutorId: match.tutor.id,
+    name: match.tutor.name,
+    initials: initialsFromName(match.tutor.name),
+    subject: match.session.subject,
+    topicKey: match.session.topic_key,
+    mins: match.session.mins,
+    location: match.session.location,
+    scheduledLabel: match.session.scheduled_label,
+  };
+}
+
+/** Poll + optional Realtime until request leaves pending. */
+export function watchTutoringRequest(
+  requestId: string,
+  onRow: (row: TutoringRequestRow) => void,
+  opts?: { pollMs?: number },
+): () => void {
+  const pollMs = opts?.pollMs ?? 2500;
+  let stopped = false;
+  let channel: RealtimeChannel | null = null;
+
+  const tick = async () => {
+    if (stopped) return;
+    try {
+      const row = await fetchTutoringRequest(requestId);
+      if (row && !stopped) onRow(row);
+    } catch (e) {
+      console.warn('watchTutoringRequest poll', e);
+    }
+  };
+
+  void tick();
+  const interval = setInterval(() => void tick(), pollMs);
+
+  const sb = getSupabase();
+  if (sb) {
+    channel = sb
+      .channel(`tutoring_request:${requestId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'tutoring_requests',
+          filter: `id=eq.${requestId}`,
+        },
+        (payload) => {
+          if (stopped) return;
+          const row = payload.new as TutoringRequestRow;
+          if (row?.id) onRow(row);
+        },
+      )
+      .subscribe();
+  }
+
+  return () => {
+    stopped = true;
+    clearInterval(interval);
+    if (channel) {
+      const client = getSupabase();
+      if (client) void client.removeChannel(channel);
+    }
+  };
+}
+
 export async function fetchPendingRequests(): Promise<{
   requests: Record<string, TutorRequest>;
   pendingIds: string[];
@@ -116,6 +282,38 @@ export async function fetchPendingRequests(): Promise<{
   return { requests, pendingIds };
 }
 
+/** Realtime hint for tutors when a new pending request appears. */
+export function watchPendingRequestInserts(onInsert: () => void): () => void {
+  const sb = getSupabase();
+  if (!sb) return () => undefined;
+
+  const channel = sb
+    .channel('tutoring_requests:pending')
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'tutoring_requests',
+      },
+      () => onInsert(),
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'tutoring_requests',
+      },
+      () => onInsert(),
+    )
+    .subscribe();
+
+  return () => {
+    void sb.removeChannel(channel);
+  };
+}
+
 export async function acceptTutoringRequest(requestId: string): Promise<SessionRow> {
   const sb = requireSupabase();
   const { data, error } = await sb.rpc('accept_tutoring_request', {
@@ -127,12 +325,21 @@ export async function acceptTutoringRequest(requestId: string): Promise<SessionR
 
 export async function declineTutoringRequest(requestId: string): Promise<void> {
   const sb = requireSupabase();
-  const { error } = await sb
+  // Prefer RPC from 002_booking_polish when present; fall back to RLS update
+  const { error: rpcErr } = await sb.rpc('decline_tutoring_request', {
+    p_request_id: requestId,
+  });
+  if (!rpcErr) return;
+
+  const { data, error } = await sb
     .from('tutoring_requests')
     .update({ status: 'declined' })
     .eq('id', requestId)
-    .eq('status', 'pending');
+    .eq('status', 'pending')
+    .select('id')
+    .maybeSingle();
   if (error) throw error;
+  if (!data) throw new Error(rpcErr.message || 'Request is no longer pending');
 }
 
 export async function fetchTutorSessions(tutorId: string): Promise<{

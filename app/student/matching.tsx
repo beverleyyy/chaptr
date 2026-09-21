@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '@/context/AppContext';
@@ -12,6 +12,7 @@ import {
   BackHeader,
   BodyText,
   DimText,
+  BtnGhost,
 } from '@/components/ui';
 import {
   durationLabel,
@@ -19,16 +20,92 @@ import {
   TOPICS,
 } from '@/constants/mockData';
 import { colors, fonts } from '@/constants/theme';
+import {
+  fetchAcceptedMatch,
+  toMatchedTutorInfo,
+  watchTutoringRequest,
+} from '@/lib/requestsApi';
+import type { TutoringRequestRow } from '@/lib/types';
+
+type WaitStatus = 'searching' | 'accepted' | 'ended' | 'error';
 
 export default function Matching() {
-  const { booking } = useApp();
+  const {
+    booking,
+    usingBackend,
+    liveRequestId,
+    setMatchedTutor,
+  } = useApp();
   const router = useRouter();
   const topic = TOPICS[booking.topicId];
+  const [status, setStatus] = useState<WaitStatus>('searching');
+  const [statusDetail, setStatusDetail] = useState<string | null>(null);
 
+  // Mock: fake timer → matched
   useEffect(() => {
+    if (usingBackend) return;
     const t = setTimeout(() => router.replace('/student/matched'), 3500);
     return () => clearTimeout(t);
-  }, [router]);
+  }, [usingBackend, router]);
+
+  // Backend: wait for real accept (poll + realtime)
+  useEffect(() => {
+    if (!usingBackend) return;
+    if (!liveRequestId) {
+      setStatus('error');
+      setStatusDetail('No live request found. Go back and confirm payment again.');
+      return;
+    }
+
+    let cancelled = false;
+
+    const handleRow = async (row: TutoringRequestRow) => {
+      if (cancelled) return;
+      if (row.status === 'accepted') {
+        setStatus('accepted');
+        try {
+          // Session row is created in the same RPC txn; retry briefly if realtime wins the race
+          let match = await fetchAcceptedMatch(row.id);
+          for (let i = 0; !match && i < 5; i++) {
+            await new Promise((r) => setTimeout(r, 400));
+            if (cancelled) return;
+            match = await fetchAcceptedMatch(row.id);
+          }
+          if (cancelled) return;
+          if (match) {
+            setMatchedTutor(toMatchedTutorInfo(match));
+          }
+          router.replace('/student/matched');
+        } catch (e) {
+          if (cancelled) return;
+          setStatus('error');
+          setStatusDetail(e instanceof Error ? e.message : 'Could not load match');
+        }
+        return;
+      }
+      if (row.status === 'declined' || row.status === 'expired' || row.status === 'cancelled') {
+        setStatus('ended');
+        setStatusDetail(
+          row.status === 'declined'
+            ? 'No tutor accepted this request. Try booking again.'
+            : row.status === 'expired'
+              ? 'Request timed out before a tutor accepted. Try again.'
+              : 'This request was cancelled.',
+        );
+      }
+    };
+
+    const unsub = watchTutoringRequest(liveRequestId, (row) => {
+      void handleRow(row);
+    });
+
+    return () => {
+      cancelled = true;
+      unsub();
+    };
+  }, [usingBackend, liveRequestId, router, setMatchedTutor]);
+
+  const searching = status === 'searching' || status === 'accepted';
 
   return (
     <Screen>
@@ -47,11 +124,39 @@ export default function Matching() {
           </View>
         </Card>
 
-        <View style={styles.search}>
-          <Ionicons name="search" size={44} color={colors.accent} style={{ marginBottom: 14 }} />
-          <Text style={styles.searchTitle}>Searching among 12 qualified tutors…</Text>
-          <DimText style={{ marginTop: 6 }}>Usually matched within 2–3 minutes</DimText>
-        </View>
+        {searching ? (
+          <View style={styles.search}>
+            {usingBackend ? (
+              <ActivityIndicator size="large" color={colors.accent} style={{ marginBottom: 14 }} />
+            ) : (
+              <Ionicons name="search" size={44} color={colors.accent} style={{ marginBottom: 14 }} />
+            )}
+            <Text style={styles.searchTitle}>
+              {status === 'accepted'
+                ? 'Tutor found — opening match…'
+                : usingBackend
+                  ? 'Waiting for a tutor to accept…'
+                  : 'Searching among 12 qualified tutors…'}
+            </Text>
+            <DimText style={{ marginTop: 6 }}>
+              {usingBackend
+                ? 'Stay on this screen — you will match as soon as someone accepts.'
+                : 'Usually matched within 2–3 minutes'}
+            </DimText>
+          </View>
+        ) : (
+          <Card style={{ padding: 16, gap: 10 }}>
+            <Text style={styles.searchTitle}>
+              {status === 'error' ? 'Something went wrong' : 'No match yet'}
+            </Text>
+            <DimText style={{ lineHeight: 18 }}>{statusDetail}</DimText>
+            <BtnGhost
+              label="Back to home"
+              onPress={() => router.replace('/student/home')}
+              style={{ marginTop: 4 }}
+            />
+          </Card>
+        )}
 
         <Card style={{ padding: 16, gap: 8 }}>
           <Text style={styles.noteLabel}>From your last session</Text>
@@ -61,9 +166,21 @@ export default function Matching() {
           </BodyText>
         </Card>
 
-        <Pressable style={{ marginTop: 'auto', alignItems: 'center' }} onPress={() => router.replace('/student/matched')}>
-          <Text style={styles.skip}>Skip wait (demo)</Text>
-        </Pressable>
+        {!usingBackend ? (
+          <Pressable
+            style={{ marginTop: 'auto', alignItems: 'center' }}
+            onPress={() => router.replace('/student/matched')}
+          >
+            <Text style={styles.skip}>Skip wait (demo)</Text>
+          </Pressable>
+        ) : searching ? (
+          <Pressable
+            style={{ marginTop: 'auto', alignItems: 'center' }}
+            onPress={() => router.replace('/student/home')}
+          >
+            <Text style={styles.skip}>Cancel and go home</Text>
+          </Pressable>
+        ) : null}
       </View>
     </Screen>
   );
