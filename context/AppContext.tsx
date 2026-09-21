@@ -29,6 +29,7 @@ import {
   fetchTutorSessions,
   watchPendingRequestInserts,
   type MatchedTutorInfo,
+  formatApiError,
 } from '@/lib/requestsApi';
 import { useAuth } from '@/context/AuthContext';
 
@@ -213,7 +214,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setWeekCount(earnings.weekCount);
       setTutorDataError(null);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Failed to load tutor data';
+      const msg = formatApiError(e);
       console.warn('refreshTutorData', e);
       setTutorDataError(msg);
     }
