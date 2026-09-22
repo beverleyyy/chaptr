@@ -720,8 +720,8 @@ export const EARNINGS: EarningRow[] = [
 export const HANDOFF_NOTE =
   'Ch.7 Trig Functions, with Ms. Tan — solid on factorising; still shaky on completing the square.';
 
-export const DUMMY_ADDRESS = 'Chaptr Study Hub · 2 Science Drive 2, #01-08';
-export const DUMMY_ADDRESS_PLAIN = 'Chaptr Study Hub, 2 Science Drive 2, #01-08';
+export const DUMMY_ADDRESS = 'Ping Study Hub · 2 Science Drive 2, #01-08';
+export const DUMMY_ADDRESS_PLAIN = 'Ping Study Hub, 2 Science Drive 2, #01-08';
 export const DUMMY_ZOOM = 'zoom.us/j/88234015671';
 
 export const AVAILABILITY_DAYS = [

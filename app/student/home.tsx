@@ -197,14 +197,14 @@ const styles = StyleSheet.create({
   },
   pillActive: { backgroundColor: colors.accent, borderColor: 'transparent' },
   pillText: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.textDim },
-  pillTextActive: { color: '#fff' },
+  pillTextActive: { color: colors.accentInk },
   pillLevel: {
     fontFamily: fonts.bold,
     fontSize: 11,
     color: colors.textDim,
     opacity: 0.85,
   },
-  pillLevelActive: { color: '#fff', opacity: 0.95 },
+  pillLevelActive: { color: colors.accentInk, opacity: 0.95 },
   listHeader: {
     paddingHorizontal: 22,
     marginBottom: 12,

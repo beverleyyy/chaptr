@@ -22,7 +22,11 @@ export default function TutorAvailability() {
           <Text style={[styles.onlineLabel, !tutorOnline && { color: colors.textDim }]}>
             {tutorOnline ? 'Online' : 'Offline'}
           </Text>
-          <Toggle on={tutorOnline} onToggle={() => setTutorOnline(!tutorOnline)} />
+          <Toggle
+            on={tutorOnline}
+            onToggle={() => setTutorOnline(!tutorOnline)}
+            activeColor={colors.live}
+          />
         </View>
       </View>
 
@@ -74,7 +78,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  onlineLabel: { fontFamily: fonts.bold, fontSize: 11.5, color: colors.accent },
+  onlineLabel: { fontFamily: fonts.bold, fontSize: 11.5, color: colors.live },
   chip: {
     paddingHorizontal: 14,
     paddingVertical: 9,
@@ -85,7 +89,7 @@ const styles = StyleSheet.create({
   },
   chipOn: { backgroundColor: colors.accent, borderColor: 'transparent' },
   chipText: { fontFamily: fonts.semiBold, fontSize: 12.5, color: colors.textDim },
-  chipTextOn: { color: '#fff' },
+  chipTextOn: { color: colors.accentInk },
   weekLabel: {
     fontFamily: fonts.bold,
     fontSize: 11,

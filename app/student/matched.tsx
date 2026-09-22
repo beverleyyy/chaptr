@@ -50,7 +50,7 @@ export default function Matched() {
               <Text style={styles.stars}>
                 ★ 4.9{' '}
                 <Text style={{ color: colors.textDim, fontFamily: fonts.medium }}>
-                  {usingBackend && matchedTutor ? '(Chaptr match)' : '(128 sessions)'}
+                  {usingBackend && matchedTutor ? '(Ping match)' : '(128 sessions)'}
                 </Text>
               </Text>
             </View>

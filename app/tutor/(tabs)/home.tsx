@@ -110,7 +110,11 @@ export default function TutorHome() {
             <Text style={[styles.onlineLabel, !tutorOnline && { color: colors.textDim }]}>
               {tutorOnline ? 'Online' : 'Offline'}
             </Text>
-            <Toggle on={tutorOnline} onToggle={() => setTutorOnline(!tutorOnline)} />
+            <Toggle
+              on={tutorOnline}
+              onToggle={() => setTutorOnline(!tutorOnline)}
+              activeColor={colors.live}
+            />
           </View>
           <Pressable onPress={() => router.push('/tutor/profile')} style={{ marginTop: 3 }}>
             <Ionicons name="settings-outline" size={22} color={colors.textDim} />
@@ -260,7 +264,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 10,
-    backgroundColor: '#FFF0E6',
+    backgroundColor: colors.accentSoft,
     borderWidth: 1,
     borderColor: colors.accent,
   },
@@ -278,7 +282,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
-  onlineLabel: { fontFamily: fonts.bold, fontSize: 11.5, color: colors.accent },
+  onlineLabel: { fontFamily: fonts.bold, fontSize: 11.5, color: colors.live },
   switchLink: { fontFamily: fonts.semiBold, fontSize: 12, color: colors.accent },
   centerCard: { padding: 18 },
   errorTitle: {
@@ -355,5 +359,5 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 14,
   },
-  toastBtnText: { fontFamily: fonts.bold, fontSize: 12, color: '#fff' },
+  toastBtnText: { fontFamily: fonts.bold, fontSize: 12, color: colors.accentInk },
 });

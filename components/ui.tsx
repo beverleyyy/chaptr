@@ -29,8 +29,8 @@ export function Screen({
             styles.glow,
             glow === 'left' ? { left: -90 } : { right: -90 },
             glow === 'left'
-              ? { backgroundColor: 'rgba(244,162,35,0.16)' }
-              : { backgroundColor: 'rgba(242,96,12,0.16)' },
+              ? { backgroundColor: 'rgba(45,226,230,0.14)' }
+              : { backgroundColor: 'rgba(200,245,66,0.12)' },
           ]}
         />
       )}
@@ -201,12 +201,18 @@ export function StatusChip({ status }: { status: 'paid' | 'pending' }) {
 export function Toggle({
   on,
   onToggle,
+  activeColor = colors.accent,
 }: {
   on: boolean;
   onToggle: () => void;
+  /** Fill when on — use `colors.live` for online status. */
+  activeColor?: string;
 }) {
   return (
-    <Pressable onPress={onToggle} style={[styles.toggle, on && styles.toggleOn]}>
+    <Pressable
+      onPress={onToggle}
+      style={[styles.toggle, on && { backgroundColor: activeColor, borderColor: 'transparent' }]}
+    >
       <View style={[styles.toggleKnob, on && styles.toggleKnobOn]} />
     </Pressable>
   );
@@ -311,11 +317,11 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 18,
     borderBottomRightRadius: 18,
     borderBottomLeftRadius: 18,
-    shadowColor: '#14181C',
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    shadowColor: '#000000',
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
   },
   display: {
     fontFamily: fonts.extraBold,

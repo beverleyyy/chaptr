@@ -54,7 +54,7 @@ export default function StudentConsent() {
         <View style={styles.footer}>
           <Pressable style={styles.checkRow} onPress={() => setChecked((v) => !v)}>
             <View style={[styles.box, checked && styles.boxOn]}>
-              {checked && <Ionicons name="checkmark" size={14} color="#fff" />}
+              {checked && <Ionicons name="checkmark" size={14} color={colors.accentInk} />}
             </View>
             <Text style={styles.checkLabel}>
               I (or my parent/guardian, if I&apos;m under 18) have read this and agree.

@@ -1,25 +1,40 @@
+/** Ping brand palette — navy + electric lime + cyan (not Chaptr orange). */
 export const colors = {
-  ink: '#FFFFFF',
-  ink2: '#FFFFFF',
-  ink3: '#F1F2F5',
-  hairline: '#E7E9ED',
-  text: '#14181C',
-  textDim: '#6D7178',
-  accent: '#F2600C',
-  accentDark: '#B34500',
-  accentSoft: '#FFF0E6',
-  accentInk: '#FFFFFF',
-  amber: '#92720C',
-  amberSoft: '#FBF3D3',
-  success: '#1B7A3D',
-  successSoft: '#E6F6EC',
-  band: '#1D4ED8',
-  bandSoft: '#EAF1FF',
+  // Surfaces
+  ink: '#07101F',
+  ink2: '#0B1F3A',
+  ink3: '#152A4A',
+  hairline: 'rgba(139, 155, 180, 0.28)',
+
+  // Type
+  text: '#F4F1EA',
+  textDim: '#8B9BB4',
+
+  // Brand anchors
+  navy: '#0B1F3A',
+  cream: '#F4F1EA',
+  live: '#2DE2E6',
+  liveSoft: 'rgba(45, 226, 230, 0.16)',
+
+  // Primary CTA — electric lime (black/ink label on lime)
+  accent: '#C8F542',
+  accentDark: '#A8D12A',
+  accentSoft: 'rgba(200, 245, 66, 0.14)',
+  accentInk: '#07101F',
+
+  // Wait-time aging only (amber → red) — not brand orange
+  amber: '#F5A623',
+  amberSoft: 'rgba(245, 166, 35, 0.18)',
+  success: '#3DDC87',
+  successSoft: 'rgba(61, 220, 135, 0.16)',
+  band: '#2DE2E6',
+  bandSoft: 'rgba(45, 226, 230, 0.14)',
   danger: '#E1483D',
-  dangerSoft: '#FCEDED',
-  pageBg: '#EEF0F3',
-  pageInk: '#14181C',
-  star: '#F5A623',
+  dangerSoft: 'rgba(225, 72, 61, 0.18)',
+
+  pageBg: '#07101F',
+  pageInk: '#F4F1EA',
+  star: '#C8F542',
 } as const;
 
 export const spacing = {
