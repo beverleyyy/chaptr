@@ -438,7 +438,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (usingBackend) {
         setBusyAction(true);
         try {
-          await acceptTutoringRequest(id);
+          const session = await acceptTutoringRequest(id);
+          if (session?.video_link) {
+            setRequests((prev) => {
+              const existing = prev[id];
+              if (!existing) return prev;
+              return { ...prev, [id]: { ...existing, videoLink: session.video_link } };
+            });
+          }
           setPending((ids) => ids.filter((x) => x !== id));
           setAccepted((ids) => (ids.includes(id) ? ids : [...ids, id]));
           setCurrentRequestId(id);

@@ -1,13 +1,14 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { ScrollView, View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useApp } from '@/context/AppContext';
-import { Screen, Card, Display, CheckCircle, BtnGhost, DimText } from '@/components/ui';
+import { Screen, Card, CheckCircle, BtnGhost, DimText } from '@/components/ui';
+import { MeetHero } from '@/components/MeetHero';
 import {
-  DUMMY_ADDRESS_PLAIN,
-  DUMMY_ZOOM,
+  DUMMY_ADDRESS,
   durationLabel,
   payoutFor,
   resolveTopic,
+  resolveVideoJoinUrl,
 } from '@/constants/mockData';
 import { colors, fonts } from '@/constants/theme';
 
@@ -24,22 +25,29 @@ export default function TutorAccepted() {
       ? `${r.subject} · ${r.topicKey}`
       : `${r.subject} · Topic`;
   const topicTitle = t?.title ?? (r.topicKey?.trim() || 'Topic details unavailable');
-  const meet =
-    r.location === 'video' ? `Join at ${DUMMY_ZOOM}` : `Meet at ${DUMMY_ADDRESS_PLAIN}`;
+  const isVideo = r.location === 'video';
 
   return (
     <Screen glow="left">
-      <View style={styles.body}>
-        <CheckCircle size={60} />
-        <Display style={{ fontSize: 22, textAlign: 'center' }}>You&apos;re confirmed</Display>
-        <DimText style={{ marginTop: 6, textAlign: 'center', lineHeight: 20, fontSize: 13.5 }}>
-          {r.name} · {r.time} · {durationLabel(r.mins)}
-          {'\n'}
-          {meet}
-        </DimText>
+      <ScrollView
+        style={{ flex: 1, width: '100%' }}
+        contentContainerStyle={styles.body}
+        showsVerticalScrollIndicator={false}
+      >
+        <CheckCircle size={36} />
+        <Text style={styles.kicker}>You&apos;re confirmed</Text>
+
+        {isVideo ? (
+          <MeetHero mode="video" url={resolveVideoJoinUrl(r.videoLink)} />
+        ) : (
+          <MeetHero mode="inperson" address={DUMMY_ADDRESS} />
+        )}
 
         <Card style={styles.card}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <DimText style={{ fontSize: 13.5 }}>
+            {r.name} · {r.time} · {durationLabel(r.mins)}
+          </DimText>
+          <View style={styles.topicRow}>
             <Text style={styles.topic}>{topicHeading}</Text>
             <Text style={styles.payout}>${payoutFor(r.mins)} payout</Text>
           </View>
@@ -56,21 +64,35 @@ export default function TutorAccepted() {
           style={{ width: '100%', marginTop: 'auto' }}
           onPress={() => router.replace('/tutor/home')}
         />
-      </View>
+      </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   body: {
-    flex: 1,
-    paddingTop: 74,
-    paddingHorizontal: 24,
+    flexGrow: 1,
+    paddingTop: 48,
+    paddingHorizontal: 20,
     paddingBottom: 24,
     alignItems: 'center',
   },
-  card: { width: '100%', padding: 18, marginTop: 22 },
-  topic: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.text },
+  kicker: {
+    fontFamily: fonts.semiBold,
+    fontSize: 16,
+    lineHeight: 22,
+    color: colors.textDim,
+    textAlign: 'center',
+  },
+  card: { width: '100%', padding: 18, marginTop: 18 },
+  topicRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 10,
+    gap: 12,
+  },
+  topic: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.text, flex: 1 },
   payout: { fontFamily: fonts.bold, fontSize: 15, color: colors.accent },
   divider: { height: 1, backgroundColor: colors.hairline, marginVertical: 14 },
 });
