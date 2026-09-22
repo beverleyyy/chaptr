@@ -45,9 +45,13 @@ npx tsc --noEmit
    npx expo start -c
    ```
 
-7. Splash → **Sign in / Sign up** (email + password, student or tutor role) → role consent → existing UI flows.
+7. Splash → **Sign in / Sign up** (email + password, student or tutor role) → role consent → **student curriculum (subjects + G1/G2/G3)** → existing UI flows.
 
 Do **not** commit `.env` or secrets. Only `.env.example` is tracked.
+
+### Student curriculum
+
+Students must pick their Full SBB / SEC subjects and a level (**G1 / G2 / G3**) before home/booking. Run [`supabase/migrations/010_student_curriculum.sql`](supabase/migrations/010_student_curriculum.sql) for `student_curriculum` + `ensure_my_curriculum`. Demo mode persists the same choices in AsyncStorage.
 
 ### Profile creation note
 
@@ -61,7 +65,7 @@ Use **two browsers** (or one normal + one private window) so each stays signed i
 
 1. **Browser A — Student**
    - Sign up as **Student** (e.g. `student@example.com`).
-   - Consent → Home → pick a topic → Book → Payment → **I've paid**.
+   - Consent → **pick subjects + G1/G2/G3 levels** → Home (only those subjects) → pick a topic → Book → Payment → **I've paid**.
    - You should land on **Finding your tutor** and stay there (no fake auto-match). A `tutoring_requests` row is created with your auth user id.
 
 2. **Browser B — Tutor**

@@ -7,7 +7,14 @@ import { isStripePublishableConfigured } from '@/lib/paynowApi';
 
 export default function RolePicker() {
   const router = useRouter();
-  const { setRole, studentConsented, tutorConsented, usingBackend } = useApp();
+  const {
+    setRole,
+    studentConsented,
+    tutorConsented,
+    usingBackend,
+    curriculumReady,
+    curriculumLoading,
+  } = useApp();
   const { configured, profile, signOut, session, loading } = useAuth();
 
   const needsSignIn = configured && !loading && !session;
@@ -18,7 +25,15 @@ export default function RolePicker() {
       return;
     }
     setRole('student');
-    router.replace(studentConsented ? '/student/home' : '/student/consent');
+    if (!studentConsented) {
+      router.replace('/student/consent');
+      return;
+    }
+    if (curriculumLoading) {
+      router.replace('/student/home');
+      return;
+    }
+    router.replace(curriculumReady ? '/student/home' : '/student/curriculum');
   };
   const goTutor = () => {
     if (needsSignIn) {

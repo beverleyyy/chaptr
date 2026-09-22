@@ -1,3 +1,4 @@
+import { useEffect, useMemo } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,13 +15,57 @@ import {
   DimText,
   BodyText,
 } from '@/components/ui';
+import { levelForSubject } from '@/lib/curriculumApi';
 import { DURATIONS, HANDOFF_NOTE, TOPICS } from '@/constants/mockData';
 import { colors, fonts } from '@/constants/theme';
 
 export default function BookSession() {
-  const { booking, setBooking } = useApp();
+  const {
+    booking,
+    setBooking,
+    curriculumReady,
+    curriculumLoading,
+    studentCurriculum,
+  } = useApp();
   const router = useRouter();
-  const topic = TOPICS[booking.topicId];
+  const baseTopic = TOPICS[booking.topicId];
+
+  const topic = useMemo(() => {
+    if (!baseTopic) return null;
+    const level = levelForSubject(studentCurriculum, baseTopic.subjectKey);
+    return level ? { ...baseTopic, band: level } : baseTopic;
+  }, [baseTopic, studentCurriculum]);
+
+  useEffect(() => {
+    if (curriculumLoading) return;
+    if (!curriculumReady) {
+      router.replace('/student/curriculum');
+      return;
+    }
+    if (baseTopic) {
+      const allowed = studentCurriculum.some((c) => c.subjectKey === baseTopic.subjectKey);
+      if (!allowed) {
+        router.replace('/student/home');
+      }
+    }
+  }, [
+    curriculumLoading,
+    curriculumReady,
+    router,
+    baseTopic,
+    studentCurriculum,
+  ]);
+
+  if (!topic || !curriculumReady) {
+    return (
+      <Screen>
+        <BackHeader title="Book a session" onBack={() => router.replace('/student/home')} />
+        <View style={{ padding: 22 }}>
+          <DimText>Choose your subjects before booking a session.</DimText>
+        </View>
+      </Screen>
+    );
+  }
 
   return (
     <Screen>
