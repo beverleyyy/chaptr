@@ -15,6 +15,15 @@ export type StudentCurriculumRow = {
   updated_at: string;
 };
 
+export type StudentTestRow = {
+  id: string;
+  student_id: string;
+  topic_key: string;
+  test_date: string;
+  label: string | null;
+  created_at: string;
+};
+
 export type Profile = {
   id: string;
   role: UserRole;
@@ -107,6 +116,25 @@ export type Database = {
           level?: SubjectLevel;
           created_at?: string;
           updated_at?: string;
+        };
+        Relationships: Relationships;
+      };
+      student_tests: {
+        Row: StudentTestRow;
+        Insert: {
+          id?: string;
+          student_id: string;
+          topic_key: string;
+          test_date: string;
+          label?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          student_id?: string;
+          topic_key?: string;
+          test_date?: string;
+          label?: string | null;
+          created_at?: string;
         };
         Relationships: Relationships;
       };

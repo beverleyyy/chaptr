@@ -25,6 +25,15 @@ import {
   loadLocalCurriculum,
   saveStudentCurriculum,
 } from '@/lib/curriculumApi';
+import {
+  createStudentTest,
+  deleteStudentTest,
+  fetchStudentTests,
+  loadLocalTests,
+  updateStudentTest,
+  type StudentTest,
+  type TestInput,
+} from '@/lib/testsApi';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import {
   acceptTutoringRequest,
@@ -117,6 +126,13 @@ type AppState = {
   curriculumReady: boolean;
   refreshCurriculum: () => Promise<void>;
   saveCurriculum: (entries: StudentCurriculumEntry[]) => Promise<void>;
+  /** Upcoming / saved test dates tied to topic keys. */
+  studentTests: StudentTest[];
+  testsLoading: boolean;
+  refreshTests: () => Promise<void>;
+  addTest: (input: TestInput) => Promise<StudentTest>;
+  editTest: (id: string, input: TestInput) => Promise<StudentTest>;
+  removeTest: (id: string) => Promise<void>;
 };
 
 const AppContext = createContext<AppState | null>(null);
@@ -168,6 +184,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const knownPendingRef = useRef<Set<string>>(new Set());
   const [studentCurriculum, setStudentCurriculum] = useState<StudentCurriculumEntry[]>([]);
   const [curriculumLoading, setCurriculumLoading] = useState(true);
+  const [studentTests, setStudentTests] = useState<StudentTest[]>([]);
+  const [testsLoading, setTestsLoading] = useState(true);
 
   // Sync role from authenticated profile when backend is on
   useEffect(() => {
@@ -196,9 +214,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [usingBackend, user?.id]);
 
+  const refreshTests = useCallback(async () => {
+    setTestsLoading(true);
+    try {
+      if (usingBackend && user?.id) {
+        const rows = await fetchStudentTests(user.id);
+        setStudentTests(rows);
+      } else if (!usingBackend) {
+        const rows = await loadLocalTests();
+        setStudentTests(rows);
+      } else {
+        setStudentTests([]);
+      }
+    } catch (e) {
+      console.warn('refreshTests', e);
+      setStudentTests([]);
+    } finally {
+      setTestsLoading(false);
+    }
+  }, [usingBackend, user?.id]);
+
   useEffect(() => {
     void refreshCurriculum();
   }, [refreshCurriculum]);
+
+  useEffect(() => {
+    void refreshTests();
+  }, [refreshTests]);
 
   const saveCurriculum = useCallback(
     async (entries: StudentCurriculumEntry[]) => {
@@ -217,6 +259,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     },
     [usingBackend, refreshProfile],
   );
+
+  const addTest = useCallback(async (input: TestInput) => {
+    const row = await createStudentTest(input);
+    setStudentTests((prev) => [...prev, row]);
+    return row;
+  }, []);
+
+  const editTest = useCallback(async (id: string, input: TestInput) => {
+    const row = await updateStudentTest(id, input);
+    setStudentTests((prev) => prev.map((t) => (t.id === id ? row : t)));
+    return row;
+  }, []);
+
+  const removeTest = useCallback(async (id: string) => {
+    await deleteStudentTest(id);
+    setStudentTests((prev) => prev.filter((t) => t.id !== id));
+  }, []);
 
   const curriculumReady = studentCurriculum.length > 0;
 
@@ -546,6 +605,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       curriculumReady,
       refreshCurriculum,
       saveCurriculum,
+      studentTests,
+      testsLoading,
+      refreshTests,
+      addTest,
+      editTest,
+      removeTest,
     }),
     [
       role,
@@ -590,6 +655,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       curriculumReady,
       refreshCurriculum,
       saveCurriculum,
+      studentTests,
+      testsLoading,
+      refreshTests,
+      addTest,
+      editTest,
+      removeTest,
     ],
   );
 

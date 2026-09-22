@@ -10,11 +10,18 @@ import {
   type CurriculumSubjectKey,
 } from '@/constants/curriculum';
 import { topicsForSubjectKey, Topic } from '@/constants/mockData';
+import { soonestTestByTopic, tagForTopic } from '@/lib/testsApi';
 import { colors, fonts } from '@/constants/theme';
 
 export default function StudentHome() {
-  const { setBooking, setRole, studentCurriculum, curriculumLoading, curriculumReady } =
-    useApp();
+  const {
+    setBooking,
+    setRole,
+    studentCurriculum,
+    curriculumLoading,
+    curriculumReady,
+    studentTests,
+  } = useApp();
   const { profile } = useAuth();
   const router = useRouter();
 
@@ -43,10 +50,15 @@ export default function StudentHome() {
     return studentCurriculum.find((c) => c.subjectKey === subject)?.level;
   }, [studentCurriculum, subject]);
 
+  const testsByTopic = useMemo(() => soonestTestByTopic(studentTests), [studentTests]);
+
   const topics = useMemo(() => {
     if (!subject || !activeLevel) return [] as Topic[];
-    return topicsForSubjectKey(subject, activeLevel);
-  }, [subject, activeLevel]);
+    return topicsForSubjectKey(subject, activeLevel).map((t) => {
+      const { tag, highlight } = tagForTopic(t.id, testsByTopic);
+      return { ...t, tag, highlight, lastCovered: undefined };
+    });
+  }, [subject, activeLevel, testsByTopic]);
 
   const subjectLabel = subject ? curriculumLabel(subject, true) : '';
   const firstName = profile?.name?.split(' ')[0] ?? 'Aiden';
@@ -138,7 +150,6 @@ export default function StudentHome() {
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
                     <Band label={t.band} />
                     {t.tag ? <Tag label={t.tag} amber /> : null}
-                    {t.lastCovered ? <DimText style={{ fontSize: 12 }}>{t.lastCovered}</DimText> : null}
                   </View>
                 </View>
                 <Ionicons name="chevron-forward" size={17} color={colors.textDim} style={{ marginTop: 4 }} />
