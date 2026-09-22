@@ -129,6 +129,13 @@ export default function TutorPending() {
           </View>
         </Card>
 
+        {r.tutorInsight ? (
+          <Card style={{ padding: 16, gap: 8 }}>
+            <Text style={styles.noteLabel}>Tutor insight</Text>
+            <BodyText>{r.tutorInsight}</BodyText>
+          </Card>
+        ) : null}
+
         {r.note ? (
           <Card style={{ padding: 16, gap: 8 }}>
             <Text style={styles.noteLabel}>Last session&apos;s handoff note</Text>

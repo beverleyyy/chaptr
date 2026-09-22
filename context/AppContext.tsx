@@ -25,6 +25,26 @@ import {
   loadLocalCurriculum,
   saveStudentCurriculum,
 } from '@/lib/curriculumApi';
+import {
+  createStudentTest,
+  deleteStudentTest,
+  fetchStudentTests,
+  loadLocalTests,
+  updateStudentTest,
+  type StudentTest,
+  type TestInput,
+} from '@/lib/testsApi';
+import {
+  EMPTY_INSIGHTS,
+  type StudentInsights,
+} from '@/constants/studentProfile';
+import {
+  fetchStudentWeaknesses,
+  insightsFromProfile,
+  loadLocalInsightsBundle,
+  saveStudentInsights,
+  saveStudentWeaknesses,
+} from '@/lib/studentProfileApi';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import {
   acceptTutoringRequest,
@@ -117,6 +137,19 @@ type AppState = {
   curriculumReady: boolean;
   refreshCurriculum: () => Promise<void>;
   saveCurriculum: (entries: StudentCurriculumEntry[]) => Promise<void>;
+  /** Upcoming / saved test dates tied to topic keys. */
+  studentTests: StudentTest[];
+  testsLoading: boolean;
+  refreshTests: () => Promise<void>;
+  addTest: (input: TestInput) => Promise<StudentTest>;
+  editTest: (id: string, input: TestInput) => Promise<StudentTest>;
+  removeTest: (id: string) => Promise<void>;
+  /** Optional student insight fields for tutors. */
+  studentInsights: StudentInsights;
+  studentWeaknesses: string[];
+  insightsLoading: boolean;
+  refreshInsights: () => Promise<void>;
+  saveInsights: (insights: StudentInsights, weaknessTopicKeys: string[]) => Promise<void>;
 };
 
 const AppContext = createContext<AppState | null>(null);
@@ -129,7 +162,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [studentConsented, setStudentConsented] = useState(false);
   const [tutorConsented, setTutorConsented] = useState(false);
   const [booking, setBookingState] = useState<Booking>({
-    topicId: 'ch9',
+    topicId: 'am_02',
     mins: 60,
     price: 20,
     location: 'inperson',
@@ -168,6 +201,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const knownPendingRef = useRef<Set<string>>(new Set());
   const [studentCurriculum, setStudentCurriculum] = useState<StudentCurriculumEntry[]>([]);
   const [curriculumLoading, setCurriculumLoading] = useState(true);
+  const [studentTests, setStudentTests] = useState<StudentTest[]>([]);
+  const [testsLoading, setTestsLoading] = useState(true);
+  const [studentInsights, setStudentInsights] = useState<StudentInsights>({
+    ...EMPTY_INSIGHTS,
+  });
+  const [studentWeaknesses, setStudentWeaknesses] = useState<string[]>([]);
+  const [insightsLoading, setInsightsLoading] = useState(true);
 
   // Sync role from authenticated profile when backend is on
   useEffect(() => {
@@ -196,9 +236,62 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [usingBackend, user?.id]);
 
+  const refreshTests = useCallback(async () => {
+    setTestsLoading(true);
+    try {
+      if (usingBackend && user?.id) {
+        const rows = await fetchStudentTests(user.id);
+        setStudentTests(rows);
+      } else if (!usingBackend) {
+        const rows = await loadLocalTests();
+        setStudentTests(rows);
+      } else {
+        setStudentTests([]);
+      }
+    } catch (e) {
+      console.warn('refreshTests', e);
+      setStudentTests([]);
+    } finally {
+      setTestsLoading(false);
+    }
+  }, [usingBackend, user?.id]);
+
+  const refreshInsights = useCallback(async () => {
+    setInsightsLoading(true);
+    try {
+      if (usingBackend && user?.id) {
+        const fromProfile = insightsFromProfile(profile);
+        setStudentInsights(fromProfile);
+        const weak = await fetchStudentWeaknesses(user.id);
+        setStudentWeaknesses(weak);
+      } else if (!usingBackend) {
+        const local = await loadLocalInsightsBundle();
+        setStudentInsights(local.insights);
+        setStudentWeaknesses(local.weaknessTopicKeys);
+      } else {
+        setStudentInsights({ ...EMPTY_INSIGHTS });
+        setStudentWeaknesses([]);
+      }
+    } catch (e) {
+      console.warn('refreshInsights', e);
+      setStudentInsights({ ...EMPTY_INSIGHTS });
+      setStudentWeaknesses([]);
+    } finally {
+      setInsightsLoading(false);
+    }
+  }, [usingBackend, user?.id, profile]);
+
   useEffect(() => {
     void refreshCurriculum();
   }, [refreshCurriculum]);
+
+  useEffect(() => {
+    void refreshTests();
+  }, [refreshTests]);
+
+  useEffect(() => {
+    void refreshInsights();
+  }, [refreshInsights]);
 
   const saveCurriculum = useCallback(
     async (entries: StudentCurriculumEntry[]) => {
@@ -211,6 +304,36 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           setBookingState((prev) => ({ ...prev, topicId: firstTopic.id }));
         }
       }
+      if (usingBackend) {
+        await refreshProfile();
+      }
+    },
+    [usingBackend, refreshProfile],
+  );
+
+  const addTest = useCallback(async (input: TestInput) => {
+    const row = await createStudentTest(input);
+    setStudentTests((prev) => [...prev, row]);
+    return row;
+  }, []);
+
+  const editTest = useCallback(async (id: string, input: TestInput) => {
+    const row = await updateStudentTest(id, input);
+    setStudentTests((prev) => prev.map((t) => (t.id === id ? row : t)));
+    return row;
+  }, []);
+
+  const removeTest = useCallback(async (id: string) => {
+    await deleteStudentTest(id);
+    setStudentTests((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  const saveInsights = useCallback(
+    async (insights: StudentInsights, weaknessTopicKeys: string[]) => {
+      const savedInsights = await saveStudentInsights(insights);
+      const savedWeak = await saveStudentWeaknesses(weaknessTopicKeys);
+      setStudentInsights(savedInsights);
+      setStudentWeaknesses(savedWeak);
       if (usingBackend) {
         await refreshProfile();
       }
@@ -546,6 +669,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       curriculumReady,
       refreshCurriculum,
       saveCurriculum,
+      studentTests,
+      testsLoading,
+      refreshTests,
+      addTest,
+      editTest,
+      removeTest,
+      studentInsights,
+      studentWeaknesses,
+      insightsLoading,
+      refreshInsights,
+      saveInsights,
     }),
     [
       role,
@@ -590,6 +724,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       curriculumReady,
       refreshCurriculum,
       saveCurriculum,
+      studentTests,
+      testsLoading,
+      refreshTests,
+      addTest,
+      editTest,
+      removeTest,
+      studentInsights,
+      studentWeaknesses,
+      insightsLoading,
+      refreshInsights,
+      saveInsights,
     ],
   );
 
