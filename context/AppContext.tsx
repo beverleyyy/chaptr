@@ -372,17 +372,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [usingBackend, user, profile, booking, refreshProfile],
   );
 
-  // Countdown timers for pending request UI
+  // Elapsed wait timers for pending request UI (count up)
   useEffect(() => {
     const tick = setInterval(() => {
       setRequests((prev) => {
         const next: typeof prev = { ...prev };
         let changed = false;
         Object.keys(next).forEach((id) => {
-          if (next[id].secondsLeft > 0) {
-            next[id] = { ...next[id], secondsLeft: next[id].secondsLeft - 1 };
-            changed = true;
-          }
+          next[id] = { ...next[id], secondsWaiting: (next[id].secondsWaiting ?? 0) + 1 };
+          changed = true;
         });
         return changed ? next : prev;
       });
@@ -390,9 +388,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => clearInterval(tick);
   }, []);
 
-  // Prune expired pending requests when secondsLeft hits 0
+  // Prune pending requests past expiresAt (live); mock rows without expiresAt stay
   useEffect(() => {
-    const expired = pendingRequestIds.filter((id) => (requests[id]?.secondsLeft ?? 0) <= 0);
+    const now = Date.now();
+    const expired = pendingRequestIds.filter((id) => {
+      const exp = requests[id]?.expiresAt;
+      if (!exp) return false;
+      return new Date(exp).getTime() <= now;
+    });
     if (!expired.length) return;
     setPending((ids) => ids.filter((id) => !expired.includes(id)));
     if (currentRequestId && expired.includes(currentRequestId)) {

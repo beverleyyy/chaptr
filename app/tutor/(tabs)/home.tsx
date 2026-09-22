@@ -163,7 +163,7 @@ export default function TutorHome() {
                         <View style={{ flex: 1 }}>
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                             <Text style={styles.newReq}>New request</Text>
-                            <Tag label={formatSeconds(r.secondsLeft)} amber />
+                            <Tag label={`Wait ${formatSeconds(r.secondsWaiting)}`} amber />
                           </View>
                           <Text style={styles.reqLine}>
                             {r.name} · {r.subject} Ch.{t?.spine ?? '?'} · {r.time}

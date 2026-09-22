@@ -48,6 +48,11 @@ function secondsUntil(iso: string): number {
   return Math.max(0, Math.floor(ms / 1000));
 }
 
+function secondsElapsed(iso: string): number {
+  const ms = Date.now() - new Date(iso).getTime();
+  return Math.max(0, Math.floor(ms / 1000));
+}
+
 function formatWhen(iso: string): string {
   const d = new Date(iso);
   const now = new Date();
@@ -187,7 +192,8 @@ export function mapRequestToUi(
     distance: row.location === 'inperson' ? 'Nearby venue' : null,
     note: row.note,
     timer: '',
-    secondsLeft: secondsUntil(row.expires_at),
+    secondsWaiting: secondsElapsed(row.created_at),
+    expiresAt: row.expires_at,
   };
 }
 
@@ -493,7 +499,7 @@ export async function fetchTutorSessions(tutorId: string): Promise<{
       distance: location === 'inperson' ? 'Nearby venue' : null,
       note: req?.note ?? null,
       timer: '',
-      secondsLeft: 0,
+      secondsWaiting: 0,
     };
     acceptedIds.push(id);
   }

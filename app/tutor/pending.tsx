@@ -92,7 +92,7 @@ export default function TutorPending() {
       <BackHeader
         title="New request"
         onBack={() => router.back()}
-        right={<Tag label={formatSeconds(r.secondsLeft)} amber />}
+        right={<Tag label={`Wait ${formatSeconds(r.secondsWaiting)}`} amber />}
       />
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
         <Card style={{ padding: 16, gap: 12 }}>

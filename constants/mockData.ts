@@ -24,7 +24,10 @@ export type TutorRequest = {
   distance: string | null;
   note: string | null;
   timer: string;
-  secondsLeft: number;
+  /** Seconds the student has been waiting (elapsed since created_at). */
+  secondsWaiting: number;
+  /** ISO expiry for prune; omit in pure mock rows that never auto-expire. */
+  expiresAt?: string | null;
 };
 
 export type ScheduleSeed = {
@@ -213,8 +216,9 @@ export function payoutFor(mins: number): number {
   return 32;
 }
 
-function withSeconds(r: Omit<TutorRequest, 'secondsLeft'>): TutorRequest {
-  return { ...r, secondsLeft: parseTimerToSeconds(r.timer) };
+function withSeconds(r: Omit<TutorRequest, 'secondsWaiting' | 'expiresAt'>): TutorRequest {
+  // Mock: start the wait clock at the old timer string, then tick upward.
+  return { ...r, secondsWaiting: parseTimerToSeconds(r.timer), expiresAt: null };
 }
 
 export const INITIAL_REQUESTS: Record<string, TutorRequest> = {
