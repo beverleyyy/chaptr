@@ -124,6 +124,7 @@ export default function StudentHome() {
         </View>
 
         <ScrollView
+          key={subject}
           style={{ flex: 1, paddingHorizontal: 22 }}
           contentContainerStyle={{ gap: 12, paddingBottom: 16 }}
           showsVerticalScrollIndicator={false}
