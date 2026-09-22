@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -15,7 +15,6 @@ import { Screen, Card, Display, Tag, Avatar, Toggle, DimText, BtnGhost } from '@
 import { SessionCard } from '@/components/SessionCard';
 import { formatSeconds, TOPICS } from '@/constants/mockData';
 import { colors, fonts } from '@/constants/theme';
-import { useState } from 'react';
 
 export default function TutorHome() {
   const router = useRouter();
@@ -40,6 +39,12 @@ export default function TutorHome() {
   const displayName = profile?.name ?? 'Mr. Rajan';
   const [refreshing, setRefreshing] = useState(false);
 
+  // Always load pending on mount when signed in — do not wait on profile.role.
+  useEffect(() => {
+    if (!usingBackend || !user?.id) return;
+    void refreshTutorData();
+  }, [usingBackend, user?.id, refreshTutorData]);
+
   const openRequest = (id: string) => {
     setCurrentRequestId(id);
     dismissToast();
@@ -61,7 +66,9 @@ export default function TutorHome() {
       <View style={styles.debugBanner}>
         <Text style={styles.debugText}>
           {usingBackend
-            ? `LIVE · pending ${pendingRequestIds.length} · you: ${profile?.role ?? 'no profile'} · ${user?.email ?? 'not signed in'}`
+            ? `LIVE · pending ${pendingRequestIds.length} · you: ${profile?.role ?? 'no profile'} · ${user?.email ?? 'not signed in'}${
+                tutorDataError ? ` · err: ${tutorDataError.slice(0, 80)}` : ''
+              }`
             : 'DEMO MODE — .env not loaded. Stop Expo, confirm .env exists, run: npx expo start -c'}
         </Text>
       </View>

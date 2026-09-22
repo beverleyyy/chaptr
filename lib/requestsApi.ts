@@ -448,7 +448,11 @@ export async function fetchTutorSessions(tutorId: string): Promise<{
     .eq('tutor_id', tutorId)
     .eq('status', 'scheduled')
     .order('created_at', { ascending: false });
-  if (error) throw error;
+  // Non-fatal: missing SELECT policies / RLS must not block pending requests
+  if (error) {
+    console.warn('fetchTutorSessions', formatApiError(error));
+    return { requests: {}, acceptedIds: [] };
+  }
 
   const rows = (data ?? []) as SessionRow[];
   const profiles = await fetchProfilesByIds(rows.map((r) => r.student_id));
@@ -494,7 +498,11 @@ export async function fetchTutorEarnings(tutorId: string): Promise<{
     .eq('tutor_id', tutorId)
     .order('created_at', { ascending: false })
     .limit(40);
-  if (error) throw error;
+  // Non-fatal: earnings RLS failures must not block pending
+  if (error) {
+    console.warn('fetchTutorEarnings', formatApiError(error));
+    return { rows: [], availableBalance: 0, weekTotal: 0, weekCount: 0 };
+  }
 
   const earnings = (data ?? []) as EarningRowDb[];
   const sessionIds = earnings.map((e) => e.session_id).filter((id): id is string => !!id);
@@ -503,11 +511,14 @@ export async function fetchTutorEarnings(tutorId: string): Promise<{
   let profiles: Record<string, Profile> = {};
   if (sessionIds.length) {
     const { data: sessions, error: sErr } = await sb.from('sessions').select('*').in('id', sessionIds);
-    if (sErr) throw sErr;
-    for (const s of (sessions ?? []) as SessionRow[]) sessionsById[s.id] = s;
-    profiles = await fetchProfilesByIds(
-      Object.values(sessionsById).map((s) => s.student_id),
-    );
+    if (sErr) {
+      console.warn('fetchTutorEarnings sessions', formatApiError(sErr));
+    } else {
+      for (const s of (sessions ?? []) as SessionRow[]) sessionsById[s.id] = s;
+      profiles = await fetchProfilesByIds(
+        Object.values(sessionsById).map((s) => s.student_id),
+      );
+    }
   }
 
   const rows: EarningRow[] = [];

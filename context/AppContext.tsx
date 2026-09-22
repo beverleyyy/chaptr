@@ -163,31 +163,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const refreshTutorData = useCallback(async () => {
     if (!usingBackend || !user?.id) return;
+
+    // Tutors without a profiles row fail RLS on pending SELECT — ensure first
+    const meta = user.user_metadata ?? {};
+    const name =
+      profile?.name?.trim() ||
+      (typeof meta.name === 'string' ? meta.name : '') ||
+      user.email?.split('@')[0] ||
+      'Tutor';
     try {
-      // Tutors without a profiles row fail RLS on pending SELECT — ensure first
-      const meta = user.user_metadata ?? {};
-      const name =
-        profile?.name?.trim() ||
-        (typeof meta.name === 'string' ? meta.name : '') ||
-        user.email?.split('@')[0] ||
-        'Tutor';
-      try {
-        await ensureOwnProfile({
-          role: 'tutor',
-          name,
-          phone: profile?.phone ?? (typeof meta.phone === 'string' ? meta.phone : null),
-        });
-      } catch (profileErr) {
-        console.warn('ensureOwnProfile tutor', profileErr);
-      }
+      await ensureOwnProfile({
+        role: 'tutor',
+        name,
+        phone: profile?.phone ?? (typeof meta.phone === 'string' ? meta.phone : null),
+      });
+    } catch (profileErr) {
+      console.warn('ensureOwnProfile tutor', profileErr);
+    }
 
-      const [pending, sessions, earnings] = await Promise.all([
-        fetchPendingRequests(),
-        fetchTutorSessions(user.id),
-        fetchTutorEarnings(user.id),
-      ]);
+    // Pending must not be blocked by sessions/earnings failures (RLS, empty policies, etc.)
+    const [pendingResult, sessionsResult, earningsResult] = await Promise.allSettled([
+      fetchPendingRequests(),
+      fetchTutorSessions(user.id),
+      fetchTutorEarnings(user.id),
+    ]);
 
-      // Toast for newly seen pending requests
+    if (pendingResult.status === 'fulfilled') {
+      const pending = pendingResult.value;
       const prevKnown = knownPendingRef.current;
       const nextKnown = new Set(pending.pendingIds);
       if (prevKnown.size > 0) {
@@ -199,41 +201,49 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
       }
       knownPendingRef.current = nextKnown;
-
-      setRequests((prev) => ({
-        ...prev,
-        ...pending.requests,
-        ...sessions.requests,
-      }));
       setPending(pending.pendingIds);
+      setRequests((prev) => ({ ...prev, ...pending.requests }));
+      setTutorDataError(null);
+    } else {
+      const msg = formatApiError(pendingResult.reason);
+      console.warn('refreshTutorData pending', pendingResult.reason);
+      setTutorDataError(msg);
+    }
+
+    if (sessionsResult.status === 'fulfilled') {
+      const sessions = sessionsResult.value;
       setAccepted(sessions.acceptedIds);
+      setRequests((prev) => ({ ...prev, ...sessions.requests }));
+    } else {
+      console.warn('refreshTutorData sessions', sessionsResult.reason);
+    }
+
+    if (earningsResult.status === 'fulfilled') {
+      const earnings = earningsResult.value;
       setEarningsRows(earnings.rows);
       setBalance(earnings.availableBalance);
       setWithdrawAmount(earnings.availableBalance);
       setWeekTotal(earnings.weekTotal);
       setWeekCount(earnings.weekCount);
-      setTutorDataError(null);
-    } catch (e) {
-      const msg = formatApiError(e);
-      console.warn('refreshTutorData', e);
-      setTutorDataError(msg);
+    } else {
+      console.warn('refreshTutorData earnings', earningsResult.reason);
     }
   }, [usingBackend, user, profile, tutorOnline, role]);
 
   useEffect(() => {
-    if (!usingBackend) return;
-    // Fetch when auth profile is tutor OR the UI is in tutor mode (role picker).
-    if (user?.id && (profile?.role === 'tutor' || role === 'tutor')) {
+    if (!usingBackend || !user?.id) return;
+    // Tutor UI role picker OR loaded tutor profile — do not wait forever on profile.
+    const isTutor = profile?.role === 'tutor' || role === 'tutor';
+    if (!isTutor) return;
+    void refreshTutorData();
+    const t = setInterval(() => void refreshTutorData(), 5000);
+    const unsub = watchPendingRequestInserts(() => {
       void refreshTutorData();
-      const t = setInterval(() => void refreshTutorData(), 5000);
-      const unsub = watchPendingRequestInserts(() => {
-        void refreshTutorData();
-      });
-      return () => {
-        clearInterval(t);
-        unsub();
-      };
-    }
+    });
+    return () => {
+      clearInterval(t);
+      unsub();
+    };
   }, [usingBackend, profile?.role, role, user?.id, refreshTutorData]);
 
   const acceptRequest = useCallback(
