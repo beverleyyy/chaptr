@@ -9,6 +9,7 @@ import React, {
 } from 'react';
 import {
   AVAILABILITY_DAYS,
+  DURATIONS,
   EXTRA_REQUEST,
   EARNINGS,
   INITIAL_REQUESTS,
@@ -165,7 +166,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [booking, setBookingState] = useState<Booking>({
     topicId: 'am_02',
     mins: 60,
-    price: 20,
+    price: DURATIONS.find((d) => d.mins === 60)?.price ?? 35,
     location: 'inperson',
   });
   const [tutorOnline, setTutorOnline] = useState(true);

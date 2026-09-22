@@ -73,11 +73,12 @@ export function topicsForSubjectKey(
     .sort((a, b) => Number(a.spine) - Number(b.spine));
 }
 
+/** Pilot student prices. 60 min is $35; other lengths are whole-dollar scales of that hour. */
 export const DURATIONS = [
-  { mins: 30, price: 10, label: '30 min' },
-  { mins: 60, price: 20, label: '1 hour' },
-  { mins: 90, price: 30, label: '1.5 hr' },
-  { mins: 120, price: 40, label: '2 hr' },
+  { mins: 30, price: 18, label: '30 min' },
+  { mins: 60, price: 35, label: '1 hour' },
+  { mins: 90, price: 50, label: '1.5 hr' },
+  { mins: 120, price: 65, label: '2 hr' },
 ];
 
 export function parseTimerToSeconds(str: string): number {
@@ -133,11 +134,12 @@ export function locationLabel(loc: 'inperson' | 'video'): string {
   return loc === 'video' ? 'Video call' : 'In person';
 }
 
+/** Pilot tutor payout. $50/hr, same rate for every duration. */
 export function payoutFor(mins: number): number {
-  if (mins === 30) return 8;
-  if (mins === 60) return 16;
-  if (mins === 90) return 24;
-  return 32;
+  if (mins === 30) return 25;
+  if (mins === 60) return 50;
+  if (mins === 90) return 75;
+  return 100;
 }
 
 function withSeconds(r: Omit<TutorRequest, 'secondsWaiting' | 'expiresAt'>): TutorRequest {
@@ -265,11 +267,11 @@ export const SCHEDULE_SEED: Record<string, ScheduleSeed> = {
 };
 
 export const EARNINGS: EarningRow[] = [
-  { subject: 'A Maths', chapterSpine: '9', time: 'Today, 7:30pm', student: 'A.L.', amount: 16, status: 'pending' },
-  { subject: 'Physics', chapterSpine: '14', time: 'Yesterday, 4:00pm', student: 'J.R.', amount: 24, status: 'paid' },
-  { subject: 'Chemistry', chapterSpine: '8', time: '2 days ago, 6:30pm', student: 'S.K.', amount: 16, status: 'paid' },
-  { subject: 'E Maths', chapterSpine: '13', time: '3 days ago, 7:00pm', student: 'A.L.', amount: 32, status: 'paid' },
-  { subject: 'A Maths', chapterSpine: '7', time: '5 days ago, 7:30pm', student: 'M.T.', amount: 16, status: 'paid' },
+  { subject: 'A Maths', chapterSpine: '9', time: 'Today, 7:30pm', student: 'A.L.', amount: 50, status: 'pending' },
+  { subject: 'Physics', chapterSpine: '14', time: 'Yesterday, 4:00pm', student: 'J.R.', amount: 75, status: 'paid' },
+  { subject: 'Chemistry', chapterSpine: '8', time: '2 days ago, 6:30pm', student: 'S.K.', amount: 50, status: 'paid' },
+  { subject: 'E Maths', chapterSpine: '13', time: '3 days ago, 7:00pm', student: 'A.L.', amount: 100, status: 'paid' },
+  { subject: 'A Maths', chapterSpine: '7', time: '5 days ago, 7:30pm', student: 'M.T.', amount: 50, status: 'paid' },
 ];
 
 export const HANDOFF_NOTE =
