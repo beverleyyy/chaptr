@@ -1,5 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Alert, Image, Linking, Pressable } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Alert,
+  Image,
+  Linking,
+  Pressable,
+  AppState,
+  type AppStateStatus,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '@/context/AppContext';
@@ -23,6 +33,14 @@ type PayPhase =
   | 'failed'
   | 'canceled';
 
+function isPaymentReturnUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  return (
+    url.startsWith('chaptr://payment-return') ||
+    url.includes('://payment-return')
+  );
+}
+
 export default function Payment() {
   const { booking, submitBookingRequest, usingBackend, busyAction } = useApp();
   const router = useRouter();
@@ -32,6 +50,7 @@ export default function Payment() {
   const [qrImageUrl, setQrImageUrl] = useState<string | null>(null);
   const [hostedUrl, setHostedUrl] = useState<string | null>(null);
   const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
+  const [checkingNow, setCheckingNow] = useState(false);
   const submittedRef = useRef(false);
   const topic = TOPICS[booking.topicId];
 
@@ -82,6 +101,37 @@ export default function Payment() {
   const finishBookingRef = useRef(finishBooking);
   finishBookingRef.current = finishBooking;
   const startedPayRef = useRef(false);
+  const phaseRef = useRef(phase);
+  phaseRef.current = phase;
+  const paymentIntentIdRef = useRef(paymentIntentId);
+  paymentIntentIdRef.current = paymentIntentId;
+
+  const pollOnce = useCallback(async (): Promise<'succeeded' | 'pending' | 'terminal'> => {
+    const piId = paymentIntentIdRef.current;
+    if (!piId) return 'pending';
+    try {
+      const st = await fetchPaynowStatus(piId);
+      if (st.status === 'succeeded') {
+        setPhase('submitting');
+        await finishBookingRef.current(piId);
+        return 'succeeded';
+      }
+      if (st.status === 'canceled') {
+        setPhase('canceled');
+        setErrorText('Payment was canceled. Go back and try again.');
+        return 'terminal';
+      }
+      if (st.status === 'failed' || st.status === 'requires_payment_method') {
+        setPhase('failed');
+        setErrorText('Payment failed. Go back and try again.');
+        return 'terminal';
+      }
+      return 'pending';
+    } catch {
+      // Keep polling on transient errors
+      return 'pending';
+    }
+  }, []);
 
   // Start PayNow PaymentIntent once when Stripe + backend are configured
   useEffect(() => {
@@ -133,22 +183,8 @@ export default function Payment() {
     let stopped = false;
 
     const tick = async () => {
-      try {
-        const st = await fetchPaynowStatus(paymentIntentId);
-        if (stopped) return;
-        if (st.status === 'succeeded') {
-          setPhase('submitting');
-          await finishBookingRef.current(paymentIntentId);
-        } else if (st.status === 'canceled') {
-          setPhase('canceled');
-          setErrorText('Payment was canceled. Go back and try again.');
-        } else if (st.status === 'failed' || st.status === 'requires_payment_method') {
-          setPhase('failed');
-          setErrorText('Payment failed. Go back and try again.');
-        }
-      } catch {
-        // Keep polling on transient errors
-      }
+      if (stopped) return;
+      await pollOnce();
     };
 
     void tick();
@@ -157,7 +193,55 @@ export default function Payment() {
       stopped = true;
       clearInterval(id);
     };
-  }, [stripeLive, paymentIntentId, phase]);
+  }, [stripeLive, paymentIntentId, phase, pollOnce]);
+
+  // When returning from browser / banking app, poll immediately (JS timers may have paused)
+  useEffect(() => {
+    if (!stripeLive) return;
+
+    const onChange = (next: AppStateStatus) => {
+      if (next !== 'active') return;
+      if (phaseRef.current !== 'awaiting_scan') return;
+      if (!paymentIntentIdRef.current) return;
+      void pollOnce();
+    };
+
+    const sub = AppState.addEventListener('change', onChange);
+    return () => sub.remove();
+  }, [stripeLive, pollOnce]);
+
+  // Lightweight deep-link: Stripe return_url is chaptr://payment-return (scheme in app.json)
+  useEffect(() => {
+    if (!stripeLive) return;
+
+    const handleUrl = (url: string | null) => {
+      if (!isPaymentReturnUrl(url)) return;
+      if (phaseRef.current !== 'awaiting_scan') return;
+      if (!paymentIntentIdRef.current) return;
+      void pollOnce();
+    };
+
+    void Linking.getInitialURL().then(handleUrl);
+    const sub = Linking.addEventListener('url', ({ url }) => handleUrl(url));
+    return () => sub.remove();
+  }, [stripeLive, pollOnce]);
+
+  const checkPaymentNow = async () => {
+    if (!stripeLive || phase !== 'awaiting_scan' || !paymentIntentId) return;
+    if (busy || busyAction || checkingNow || submittedRef.current) return;
+    setCheckingNow(true);
+    setErrorText(null);
+    try {
+      const outcome = await pollOnce();
+      if (outcome === 'pending') {
+        setErrorText(
+          'Payment not confirmed yet. If you already authorized on the Stripe page, wait a moment and tap again — or stay on this screen while we keep checking.',
+        );
+      }
+    } finally {
+      setCheckingNow(false);
+    }
+  };
 
   const confirmMock = async () => {
     if (busy || busyAction || stripeLive) return;
@@ -167,6 +251,9 @@ export default function Payment() {
   const waiting =
     stripeLive &&
     (phase === 'creating' || phase === 'awaiting_scan' || phase === 'submitting');
+
+  const awaitingScan = stripeLive && phase === 'awaiting_scan';
+  const checkBusy = checkingNow || busy || busyAction;
 
   return (
     <Screen>
@@ -230,14 +317,14 @@ export default function Payment() {
                   ? 'Payment received — creating your tutoring request…'
                   : phase === 'canceled' || phase === 'failed'
                     ? errorText || 'Payment did not complete.'
-                    : 'Scan with your banking app (or open the Stripe test page). We create the tutoring request automatically when payment succeeds.'
+                    : 'Authorize on the Stripe test page, then return to this Chaptr screen — the Stripe page will not open matching. We detect payment here (and when you come back to the app).'
               : usingBackend
                 ? "Scan with your banking app, then confirm below once you've paid. Confirming creates a live tutoring request for tutors."
                 : "Scan with your banking app, then confirm below once you've paid. (Mock payment — no money moves.)"}
           </DimText>
         </Card>
 
-        {errorText && phase !== 'awaiting_scan' ? (
+        {errorText && (phase === 'awaiting_scan' || phase === 'failed' || phase === 'canceled') ? (
           <Text style={styles.errorText} accessibilityRole="alert">
             {errorText}
           </Text>
@@ -253,10 +340,14 @@ export default function Payment() {
                     ? 'Preparing PayNow…'
                     : phase === 'failed' || phase === 'canceled'
                       ? 'Payment incomplete'
-                      : 'Waiting for payment…'
+                      : awaitingScan
+                        ? checkBusy
+                          ? 'Checking payment…'
+                          : "I've paid — check now"
+                        : 'Waiting for payment…'
               }
-              onPress={() => {}}
-              disabled
+              onPress={awaitingScan ? () => void checkPaymentNow() : () => {}}
+              disabled={!awaitingScan || checkBusy}
             />
           ) : (
             <BtnPrimary
