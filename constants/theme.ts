@@ -1,4 +1,4 @@
-/** Ping brand palette — light cream/white + lime CTAs + cyan live (not Chaptr orange). */
+/** Ping brand palette — light cream/white + electric indigo CTAs + cyan live. */
 export const colors = {
   // Surfaces (semantic: ink = page, ink2 = card, ink3 = muted chip)
   ink: '#F4F1EA',
@@ -16,13 +16,13 @@ export const colors = {
   live: '#2DE2E6',
   liveSoft: 'rgba(45, 226, 230, 0.16)',
 
-  // Primary CTA — electric lime (dark ink label on lime)
-  accent: '#C8F542',
-  accentDark: '#0B1F3A',
-  accentSoft: 'rgba(200, 245, 66, 0.22)',
-  accentInk: '#07101F',
+  // Primary CTA — electric indigo (white label on indigo)
+  accent: '#5B4DFF',
+  accentDark: '#3F35C9',
+  accentSoft: 'rgba(91, 77, 255, 0.14)',
+  accentInk: '#FFFFFF',
 
-  // Wait-time aging only (amber → red) — not brand orange
+  // Wait-time aging only (amber → red) — not brand orange / not CTA green
   amber: '#C4850A',
   amberSoft: '#FBF3D3',
   success: '#1B7A3D',
@@ -34,7 +34,7 @@ export const colors = {
 
   pageBg: '#F4F1EA',
   pageInk: '#0B1F3A',
-  star: '#C8F542',
+  star: '#5B4DFF',
 } as const;
 
 export const spacing = {

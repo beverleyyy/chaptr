@@ -30,7 +30,7 @@ export function Screen({
             glow === 'left' ? { left: -90 } : { right: -90 },
             glow === 'left'
               ? { backgroundColor: 'rgba(45,226,230,0.14)' }
-              : { backgroundColor: 'rgba(200,245,66,0.12)' },
+              : { backgroundColor: 'rgba(91,77,255,0.12)' },
           ]}
         />
       )}
