@@ -1,26 +1,70 @@
-import { useState } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { View, Text, Pressable, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
 import { Screen, Card, Display, Band, Tag, Spine, DimText } from '@/components/ui';
-import { SUBJECTS, TOPICS, Topic } from '@/constants/mockData';
+import {
+  curriculumLabel,
+  type CurriculumSubjectKey,
+} from '@/constants/curriculum';
+import { topicsForSubjectKey, Topic } from '@/constants/mockData';
 import { colors, fonts } from '@/constants/theme';
 
 export default function StudentHome() {
-  const [subject, setSubject] = useState<(typeof SUBJECTS)[number]['key']>('amaths');
-  const { setBooking, setRole } = useApp();
+  const { setBooking, setRole, studentCurriculum, curriculumLoading, curriculumReady } =
+    useApp();
   const { profile } = useAuth();
   const router = useRouter();
+
+  const [subject, setSubject] = useState<CurriculumSubjectKey | null>(null);
+
+  useEffect(() => {
+    if (curriculumLoading) return;
+    if (!curriculumReady) {
+      router.replace('/student/curriculum');
+    }
+  }, [curriculumLoading, curriculumReady, router]);
+
+  useEffect(() => {
+    if (!studentCurriculum.length) {
+      setSubject(null);
+      return;
+    }
+    setSubject((prev) => {
+      if (prev && studentCurriculum.some((c) => c.subjectKey === prev)) return prev;
+      return studentCurriculum[0].subjectKey;
+    });
+  }, [studentCurriculum]);
+
+  const activeLevel = useMemo(() => {
+    if (!subject) return undefined;
+    return studentCurriculum.find((c) => c.subjectKey === subject)?.level;
+  }, [studentCurriculum, subject]);
+
+  const topics = useMemo(() => {
+    if (!subject || !activeLevel) return [] as Topic[];
+    return topicsForSubjectKey(subject, activeLevel);
+  }, [subject, activeLevel]);
+
+  const subjectLabel = subject ? curriculumLabel(subject, true) : '';
   const firstName = profile?.name?.split(' ')[0] ?? 'Aiden';
-  const topics = Object.values(TOPICS).filter((t) => t.subjectKey === subject);
-  const subjectLabel = SUBJECTS.find((s) => s.key === subject)?.label ?? '';
 
   const openTopic = (t: Topic) => {
     setBooking({ topicId: t.id });
     router.push('/student/book');
   };
+
+  if (curriculumLoading || !curriculumReady || !subject) {
+    return (
+      <Screen>
+        <View style={styles.loading}>
+          <ActivityIndicator color={colors.accent} />
+        </View>
+      </Screen>
+    );
+  }
 
   return (
     <Screen>
@@ -40,6 +84,10 @@ export default function StudentHome() {
           <Display style={{ fontSize: 23, marginTop: 2, lineHeight: 30 }}>
             Which topic do you need help with?
           </Display>
+          <Pressable onPress={() => router.push('/student/curriculum')} style={styles.editLink}>
+            <Text style={styles.editText}>Edit subjects</Text>
+            <Ionicons name="chevron-forward" size={14} color={colors.accent} />
+          </Pressable>
         </View>
 
         <ScrollView
@@ -48,21 +96,29 @@ export default function StudentHome() {
           style={styles.pillsScroll}
           contentContainerStyle={styles.pills}
         >
-          {SUBJECTS.map((s) => (
-            <Pressable
-              key={s.key}
-              onPress={() => setSubject(s.key)}
-              style={[styles.pill, subject === s.key && styles.pillActive]}
-            >
-              <Text style={[styles.pillText, subject === s.key && styles.pillTextActive]}>
-                {s.label}
-              </Text>
-            </Pressable>
-          ))}
+          {studentCurriculum.map((entry) => {
+            const active = subject === entry.subjectKey;
+            return (
+              <Pressable
+                key={entry.subjectKey}
+                onPress={() => setSubject(entry.subjectKey)}
+                style={[styles.pill, active && styles.pillActive]}
+              >
+                <Text style={[styles.pillText, active && styles.pillTextActive]}>
+                  {curriculumLabel(entry.subjectKey, true)}
+                </Text>
+                <Text style={[styles.pillLevel, active && styles.pillLevelActive]}>
+                  {entry.level}
+                </Text>
+              </Pressable>
+            );
+          })}
         </ScrollView>
 
         <View style={styles.listHeader}>
-          <Text style={styles.listTitle}>{subjectLabel} topics</Text>
+          <Text style={styles.listTitle}>
+            {subjectLabel} · {activeLevel} topics
+          </Text>
           <Text style={styles.listHint}>Tap a topic to book</Text>
         </View>
 
@@ -109,8 +165,17 @@ export default function StudentHome() {
 }
 
 const styles = StyleSheet.create({
+  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   header: { paddingTop: 54, paddingHorizontal: 22, paddingBottom: 4 },
   switchLink: { fontFamily: fonts.semiBold, fontSize: 12, color: colors.accent },
+  editLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    marginTop: 8,
+    alignSelf: 'flex-start',
+  },
+  editText: { fontFamily: fonts.semiBold, fontSize: 12.5, color: colors.accent },
   pillsScroll: { flexGrow: 0 },
   pills: {
     paddingHorizontal: 22,
@@ -119,17 +184,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pill: {
-    paddingHorizontal: 15,
+    paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
     borderColor: colors.hairline,
     backgroundColor: colors.ink3,
     alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   pillActive: { backgroundColor: colors.accent, borderColor: 'transparent' },
   pillText: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.textDim },
   pillTextActive: { color: '#fff' },
+  pillLevel: {
+    fontFamily: fonts.bold,
+    fontSize: 11,
+    color: colors.textDim,
+    opacity: 0.85,
+  },
+  pillLevelActive: { color: '#fff', opacity: 0.95 },
   listHeader: {
     paddingHorizontal: 22,
     marginBottom: 12,

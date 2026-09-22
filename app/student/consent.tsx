@@ -26,7 +26,7 @@ const ITEMS = [
 
 export default function StudentConsent() {
   const [checked, setChecked] = useState(false);
-  const { setStudentConsented } = useApp();
+  const { setStudentConsented, curriculumReady, curriculumLoading } = useApp();
   const router = useRouter();
 
   return (
@@ -65,7 +65,11 @@ export default function StudentConsent() {
             disabled={!checked}
             onPress={() => {
               setStudentConsented(true);
-              router.replace('/student/home');
+              if (curriculumLoading) {
+                router.replace('/student/home');
+                return;
+              }
+              router.replace(curriculumReady ? '/student/home' : '/student/curriculum');
             }}
           />
         </View>

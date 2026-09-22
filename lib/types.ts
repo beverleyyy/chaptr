@@ -4,12 +4,24 @@ export type RequestStatus = 'pending' | 'accepted' | 'declined' | 'expired' | 'c
 export type SessionStatus = 'scheduled' | 'completed' | 'cancelled';
 export type EarningStatus = 'pending' | 'paid' | 'withdrawn';
 
+export type SubjectLevel = 'G1' | 'G2' | 'G3';
+
+export type StudentCurriculumRow = {
+  id: string;
+  student_id: string;
+  subject_key: string;
+  level: SubjectLevel;
+  created_at: string;
+  updated_at: string;
+};
+
 export type Profile = {
   id: string;
   role: UserRole;
   name: string;
   full_name?: string | null;
   phone: string | null;
+  curriculum_completed_at?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -64,6 +76,7 @@ export type Database = {
           name: string;
           full_name?: string | null;
           phone?: string | null;
+          curriculum_completed_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -72,6 +85,26 @@ export type Database = {
           name?: string;
           full_name?: string | null;
           phone?: string | null;
+          curriculum_completed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: Relationships;
+      };
+      student_curriculum: {
+        Row: StudentCurriculumRow;
+        Insert: {
+          id?: string;
+          student_id: string;
+          subject_key: string;
+          level: SubjectLevel;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          student_id?: string;
+          subject_key?: string;
+          level?: SubjectLevel;
           created_at?: string;
           updated_at?: string;
         };
@@ -166,6 +199,10 @@ export type Database = {
       ensure_my_profile: {
         Args: { p_role: string; p_name: string; p_phone?: string | null };
         Returns: Profile;
+      };
+      ensure_my_curriculum: {
+        Args: { p_items: { subject_key: string; level: string }[] };
+        Returns: StudentCurriculumRow[];
       };
       list_pending_tutoring_requests: { Args: Record<string, never>; Returns: Database["public"]["Tables"]["tutoring_requests"]["Row"][] };
       create_my_tutoring_request: {

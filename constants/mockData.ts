@@ -1,3 +1,5 @@
+import type { CurriculumSubjectKey } from '@/constants/curriculum';
+import { CURRICULUM_SUBJECTS } from '@/constants/curriculum';
 import { colors } from '@/constants/theme';
 
 export type Topic = {
@@ -5,7 +7,7 @@ export type Topic = {
   spine: string;
   title: string;
   subject: string;
-  subjectKey: 'amaths' | 'emaths' | 'physics' | 'chem';
+  subjectKey: CurriculumSubjectKey;
   band: string;
   tag?: string;
   lastCovered?: string;
@@ -161,14 +163,360 @@ export const TOPICS: Record<string, Topic> = {
     subjectKey: 'chem',
     band: 'G3',
   },
+  // English Language
+  eng1: {
+    id: 'eng1',
+    spine: '1',
+    title: 'Continuous Writing & Situational Writing',
+    subject: 'English',
+    subjectKey: 'english',
+    band: 'G3',
+    highlight: true,
+  },
+  eng2: {
+    id: 'eng2',
+    spine: '2',
+    title: 'Comprehension & Summary',
+    subject: 'English',
+    subjectKey: 'english',
+    band: 'G3',
+  },
+  eng3: {
+    id: 'eng3',
+    spine: '3',
+    title: 'Oral Communication & Listening',
+    subject: 'English',
+    subjectKey: 'english',
+    band: 'G3',
+  },
+  // Biology
+  bio1: {
+    id: 'bio1',
+    spine: '1',
+    title: 'Cell Structure & Organisation',
+    subject: 'Biology',
+    subjectKey: 'biology',
+    band: 'G3',
+    highlight: true,
+  },
+  bio2: {
+    id: 'bio2',
+    spine: '2',
+    title: 'Nutrition & Transport in Humans',
+    subject: 'Biology',
+    subjectKey: 'biology',
+    band: 'G3',
+  },
+  bio3: {
+    id: 'bio3',
+    spine: '3',
+    title: 'Coordination & Response',
+    subject: 'Biology',
+    subjectKey: 'biology',
+    band: 'G3',
+  },
+  // Mother Tongue — Chinese
+  zh1: {
+    id: 'zh1',
+    spine: '1',
+    title: 'Paper 1 Composition',
+    subject: 'Chinese',
+    subjectKey: 'chinese',
+    band: 'G3',
+    highlight: true,
+  },
+  zh2: {
+    id: 'zh2',
+    spine: '2',
+    title: 'Comprehension & Cloze',
+    subject: 'Chinese',
+    subjectKey: 'chinese',
+    band: 'G3',
+  },
+  zh3: {
+    id: 'zh3',
+    spine: '3',
+    title: 'Oral & Listening Comprehension',
+    subject: 'Chinese',
+    subjectKey: 'chinese',
+    band: 'G3',
+  },
+  // Mother Tongue — Malay
+  ms1: {
+    id: 'ms1',
+    spine: '1',
+    title: 'Karangan (Composition)',
+    subject: 'Malay',
+    subjectKey: 'malay',
+    band: 'G3',
+    highlight: true,
+  },
+  ms2: {
+    id: 'ms2',
+    spine: '2',
+    title: 'Kefahaman & Cloze',
+    subject: 'Malay',
+    subjectKey: 'malay',
+    band: 'G3',
+  },
+  ms3: {
+    id: 'ms3',
+    spine: '3',
+    title: 'Lisan & Pendengaran',
+    subject: 'Malay',
+    subjectKey: 'malay',
+    band: 'G3',
+  },
+  // Mother Tongue — Tamil
+  ta1: {
+    id: 'ta1',
+    spine: '1',
+    title: 'Composition & Letter Writing',
+    subject: 'Tamil',
+    subjectKey: 'tamil',
+    band: 'G3',
+    highlight: true,
+  },
+  ta2: {
+    id: 'ta2',
+    spine: '2',
+    title: 'Comprehension & Language Use',
+    subject: 'Tamil',
+    subjectKey: 'tamil',
+    band: 'G3',
+  },
+  ta3: {
+    id: 'ta3',
+    spine: '3',
+    title: 'Oral & Listening',
+    subject: 'Tamil',
+    subjectKey: 'tamil',
+    band: 'G3',
+  },
+  // Combined Science — Physics/Chemistry
+  cspc1: {
+    id: 'cspc1',
+    spine: '1',
+    title: 'Forces, Pressure & Energy',
+    subject: 'CS Phy/Chem',
+    subjectKey: 'cs_phy_chem',
+    band: 'G3',
+    highlight: true,
+  },
+  cspc2: {
+    id: 'cspc2',
+    spine: '2',
+    title: 'Atomic Structure & Chemical Bonding',
+    subject: 'CS Phy/Chem',
+    subjectKey: 'cs_phy_chem',
+    band: 'G3',
+  },
+  cspc3: {
+    id: 'cspc3',
+    spine: '3',
+    title: 'Electricity & Chemical Reactions',
+    subject: 'CS Phy/Chem',
+    subjectKey: 'cs_phy_chem',
+    band: 'G3',
+  },
+  // Combined Science — Chemistry/Biology
+  cscb1: {
+    id: 'cscb1',
+    spine: '1',
+    title: 'Chemical Bonding & Stoichiometry',
+    subject: 'CS Chem/Bio',
+    subjectKey: 'cs_chem_bio',
+    band: 'G3',
+    highlight: true,
+  },
+  cscb2: {
+    id: 'cscb2',
+    spine: '2',
+    title: 'Cell Biology & Enzymes',
+    subject: 'CS Chem/Bio',
+    subjectKey: 'cs_chem_bio',
+    band: 'G3',
+  },
+  cscb3: {
+    id: 'cscb3',
+    spine: '3',
+    title: 'Acids, Bases & Human Physiology',
+    subject: 'CS Chem/Bio',
+    subjectKey: 'cs_chem_bio',
+    band: 'G3',
+  },
+  // Combined Science — Physics/Biology
+  cspb1: {
+    id: 'cspb1',
+    spine: '1',
+    title: 'Kinematics & Forces',
+    subject: 'CS Phy/Bio',
+    subjectKey: 'cs_phy_bio',
+    band: 'G3',
+    highlight: true,
+  },
+  cspb2: {
+    id: 'cspb2',
+    spine: '2',
+    title: 'Energy & Waves',
+    subject: 'CS Phy/Bio',
+    subjectKey: 'cs_phy_bio',
+    band: 'G3',
+  },
+  cspb3: {
+    id: 'cspb3',
+    spine: '3',
+    title: 'Transport & Coordination in Humans',
+    subject: 'CS Phy/Bio',
+    subjectKey: 'cs_phy_bio',
+    band: 'G3',
+  },
+  // Geography
+  geo1: {
+    id: 'geo1',
+    spine: '1',
+    title: 'Plate Tectonics & Weathering',
+    subject: 'Geography',
+    subjectKey: 'geography',
+    band: 'G3',
+    highlight: true,
+  },
+  geo2: {
+    id: 'geo2',
+    spine: '2',
+    title: 'Weather & Climate',
+    subject: 'Geography',
+    subjectKey: 'geography',
+    band: 'G3',
+  },
+  geo3: {
+    id: 'geo3',
+    spine: '3',
+    title: 'Tourism & Living with Tectonic Hazards',
+    subject: 'Geography',
+    subjectKey: 'geography',
+    band: 'G3',
+  },
+  // History
+  hist1: {
+    id: 'hist1',
+    spine: '1',
+    title: 'Source-Based Skills',
+    subject: 'History',
+    subjectKey: 'history',
+    band: 'G3',
+    highlight: true,
+  },
+  hist2: {
+    id: 'hist2',
+    spine: '2',
+    title: 'Outbreak of WWII in Asia-Pacific',
+    subject: 'History',
+    subjectKey: 'history',
+    band: 'G3',
+  },
+  hist3: {
+    id: 'hist3',
+    spine: '3',
+    title: 'Cold War & Decolonisation',
+    subject: 'History',
+    subjectKey: 'history',
+    band: 'G3',
+  },
+  // Literature in English
+  lit1: {
+    id: 'lit1',
+    spine: '1',
+    title: 'Poetry Analysis',
+    subject: 'Literature',
+    subjectKey: 'literature',
+    band: 'G3',
+    highlight: true,
+  },
+  lit2: {
+    id: 'lit2',
+    spine: '2',
+    title: 'Prose & Unseen Texts',
+    subject: 'Literature',
+    subjectKey: 'literature',
+    band: 'G3',
+  },
+  lit3: {
+    id: 'lit3',
+    spine: '3',
+    title: 'Drama & Set Texts',
+    subject: 'Literature',
+    subjectKey: 'literature',
+    band: 'G3',
+  },
+  // Principles of Accounts
+  poa1: {
+    id: 'poa1',
+    spine: '1',
+    title: 'Double-Entry & Journals',
+    subject: 'POA',
+    subjectKey: 'poa',
+    band: 'G3',
+    highlight: true,
+  },
+  poa2: {
+    id: 'poa2',
+    spine: '2',
+    title: 'Ledger Accounts & Trial Balance',
+    subject: 'POA',
+    subjectKey: 'poa',
+    band: 'G3',
+  },
+  poa3: {
+    id: 'poa3',
+    spine: '3',
+    title: 'Financial Statements',
+    subject: 'POA',
+    subjectKey: 'poa',
+    band: 'G3',
+  },
+  // Computing
+  cmp1: {
+    id: 'cmp1',
+    spine: '1',
+    title: 'Algorithms & Flowcharts',
+    subject: 'Computing',
+    subjectKey: 'computing',
+    band: 'G3',
+    highlight: true,
+  },
+  cmp2: {
+    id: 'cmp2',
+    spine: '2',
+    title: 'Python Programming Basics',
+    subject: 'Computing',
+    subjectKey: 'computing',
+    band: 'G3',
+  },
+  cmp3: {
+    id: 'cmp3',
+    spine: '3',
+    title: 'Data Structures & Networks',
+    subject: 'Computing',
+    subjectKey: 'computing',
+    band: 'G3',
+  },
 };
 
-export const SUBJECTS = [
-  { key: 'amaths' as const, label: 'A Maths' },
-  { key: 'emaths' as const, label: 'E Maths' },
-  { key: 'physics' as const, label: 'Physics' },
-  { key: 'chem' as const, label: 'Chem' },
-];
+/** Full curriculum subject list for pickers (ordered by tuition demand). */
+export const SUBJECTS = CURRICULUM_SUBJECTS.map((s) => ({
+  key: s.key,
+  label: s.shortLabel,
+}));
+
+export function topicsForSubjectKey(
+  subjectKey: CurriculumSubjectKey,
+  level?: string,
+): Topic[] {
+  return Object.values(TOPICS)
+    .filter((t) => t.subjectKey === subjectKey)
+    .map((t) => (level ? { ...t, band: level } : t));
+}
 
 export const DURATIONS = [
   { mins: 30, price: 10, label: '30 min' },

@@ -14,10 +14,17 @@ import {
   INITIAL_REQUESTS,
   REQUEST_ORDER,
   STYLE_TAGS,
+  TOPICS,
   TUTOR_SUBJECTS,
   TutorRequest,
   EarningRow,
 } from '@/constants/mockData';
+import type { StudentCurriculumEntry } from '@/constants/curriculum';
+import {
+  fetchStudentCurriculum,
+  loadLocalCurriculum,
+  saveStudentCurriculum,
+} from '@/lib/curriculumApi';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import {
   acceptTutoringRequest,
@@ -104,6 +111,12 @@ type AppState = {
   weekSessionCount: number;
   usingBackend: boolean;
   busyAction: boolean;
+  /** Student Full SBB / SEC subjects + G1|G2|G3 levels. */
+  studentCurriculum: StudentCurriculumEntry[];
+  curriculumLoading: boolean;
+  curriculumReady: boolean;
+  refreshCurriculum: () => Promise<void>;
+  saveCurriculum: (entries: StudentCurriculumEntry[]) => Promise<void>;
 };
 
 const AppContext = createContext<AppState | null>(null);
@@ -153,6 +166,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [busyAction, setBusyAction] = useState(false);
   const [tutorDataError, setTutorDataError] = useState<string | null>(null);
   const knownPendingRef = useRef<Set<string>>(new Set());
+  const [studentCurriculum, setStudentCurriculum] = useState<StudentCurriculumEntry[]>([]);
+  const [curriculumLoading, setCurriculumLoading] = useState(true);
 
   // Sync role from authenticated profile when backend is on
   useEffect(() => {
@@ -160,6 +175,50 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setRole(profile.role);
     }
   }, [usingBackend, profile?.role]);
+
+  const refreshCurriculum = useCallback(async () => {
+    setCurriculumLoading(true);
+    try {
+      if (usingBackend && user?.id) {
+        const rows = await fetchStudentCurriculum(user.id);
+        setStudentCurriculum(rows);
+      } else if (!usingBackend) {
+        const rows = await loadLocalCurriculum();
+        setStudentCurriculum(rows);
+      } else {
+        setStudentCurriculum([]);
+      }
+    } catch (e) {
+      console.warn('refreshCurriculum', e);
+      setStudentCurriculum([]);
+    } finally {
+      setCurriculumLoading(false);
+    }
+  }, [usingBackend, user?.id]);
+
+  useEffect(() => {
+    void refreshCurriculum();
+  }, [refreshCurriculum]);
+
+  const saveCurriculum = useCallback(
+    async (entries: StudentCurriculumEntry[]) => {
+      const saved = await saveStudentCurriculum(entries);
+      setStudentCurriculum(saved);
+      const first = saved[0];
+      if (first) {
+        const firstTopic = Object.values(TOPICS).find((t) => t.subjectKey === first.subjectKey);
+        if (firstTopic) {
+          setBookingState((prev) => ({ ...prev, topicId: firstTopic.id }));
+        }
+      }
+      if (usingBackend) {
+        await refreshProfile();
+      }
+    },
+    [usingBackend, refreshProfile],
+  );
+
+  const curriculumReady = studentCurriculum.length > 0;
 
   const setBooking = useCallback((b: Partial<Booking>) => {
     setBookingState((prev) => ({ ...prev, ...b }));
@@ -331,11 +390,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     async (subject: string, note?: string | null, stripePaymentIntentId?: string | null) => {
       if (!usingBackend) return null;
       if (!user?.id) throw new Error('Sign in required to create a request');
+      if (studentCurriculum.length < 1) {
+        throw new Error('Save your subjects before booking a tutor');
+      }
 
       setBusyAction(true);
       try {
         if (profile?.role === 'tutor') {
           throw new Error('Tutor accounts cannot create student booking requests');
+        }
+
+        const topic = TOPICS[booking.topicId];
+        if (topic) {
+          const allowed = studentCurriculum.some((c) => c.subjectKey === topic.subjectKey);
+          if (!allowed) {
+            throw new Error('That topic is not in your saved curriculum');
+          }
         }
 
         const name =
@@ -374,7 +444,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setBusyAction(false);
       }
     },
-    [usingBackend, user, profile, booking, refreshProfile],
+    [usingBackend, user, profile, booking, refreshProfile, studentCurriculum],
   );
 
   // Elapsed wait timers for pending request UI (count up)
@@ -471,6 +541,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       weekSessionCount,
       usingBackend,
       busyAction,
+      studentCurriculum,
+      curriculumLoading,
+      curriculumReady,
+      refreshCurriculum,
+      saveCurriculum,
     }),
     [
       role,
@@ -510,6 +585,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       weekSessionCount,
       usingBackend,
       busyAction,
+      studentCurriculum,
+      curriculumLoading,
+      curriculumReady,
+      refreshCurriculum,
+      saveCurriculum,
     ],
   );
 
