@@ -24,6 +24,8 @@ export type TutorRequest = {
   secondsWaiting: number;
   /** ISO expiry for prune; omit in pure mock rows that never auto-expire. */
   expiresAt?: string | null;
+  /** Optional student insight blurb for tutor pending/accept. */
+  tutorInsight?: string | null;
 };
 
 export type ScheduleSeed = {

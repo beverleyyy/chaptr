@@ -10,6 +10,11 @@ import type {
 } from '@/lib/types';
 import type { EarningRow, TutorRequest } from '@/constants/mockData';
 import { TOPICS } from '@/constants/mockData';
+import {
+  fetchWeaknessesForStudents,
+  formatTutorInsightPreview,
+  insightsFromProfile,
+} from '@/lib/studentProfileApi';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
 export type CreateRequestInput = {
@@ -175,15 +180,18 @@ export async function ensureOwnProfile(opts: {
 
 export function mapRequestToUi(
   row: TutoringRequestRow,
-  student?: Pick<Profile, 'name'> | null,
+  student?: Profile | null,
+  weaknessTopicKeys: string[] = [],
 ): TutorRequest {
   const name = student?.name ? abbreviatedName(student.name) : 'Student';
   const initials = student?.name ? initialsFromName(student.name) : 'ST';
+  const insights = insightsFromProfile(student);
+  const tutorInsight = formatTutorInsightPreview(insights, weaknessTopicKeys);
   return {
     id: row.id,
     name,
     initials,
-    band: 'Sec Express',
+    band: insights.schoolYear ?? 'Sec Express',
     continuity: 'Chaptr match',
     subject: row.subject,
     topicKey: row.topic_key,
@@ -195,6 +203,7 @@ export function mapRequestToUi(
     timer: '',
     secondsWaiting: secondsElapsed(row.created_at),
     expiresAt: row.expires_at,
+    tutorInsight,
   };
 }
 
@@ -375,11 +384,16 @@ export async function fetchPendingRequests(): Promise<{
   }
 
   const profiles = await fetchProfilesByIds(rows.map((r) => r.student_id));
+  const weaknesses = await fetchWeaknessesForStudents(rows.map((r) => r.student_id));
 
   const requests: Record<string, TutorRequest> = {};
   const pendingIds: string[] = [];
   for (const row of rows) {
-    const mapped = mapRequestToUi(row, profiles[row.student_id]);
+    const mapped = mapRequestToUi(
+      row,
+      profiles[row.student_id],
+      weaknesses[row.student_id] ?? [],
+    );
     requests[mapped.id] = mapped;
     pendingIds.push(mapped.id);
   }

@@ -31,8 +31,20 @@ export type Profile = {
   full_name?: string | null;
   phone: string | null;
   curriculum_completed_at?: string | null;
+  school_year?: string | null;
+  tutoring_goal?: string | null;
+  tutor_notes?: string | null;
+  preferred_language?: string | null;
+  weakness_notes?: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type StudentWeaknessRow = {
+  id: string;
+  student_id: string;
+  topic_key: string;
+  created_at: string;
 };
 
 export type TutoringRequestRow = {
@@ -86,6 +98,11 @@ export type Database = {
           full_name?: string | null;
           phone?: string | null;
           curriculum_completed_at?: string | null;
+          school_year?: string | null;
+          tutoring_goal?: string | null;
+          tutor_notes?: string | null;
+          preferred_language?: string | null;
+          weakness_notes?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -95,6 +112,11 @@ export type Database = {
           full_name?: string | null;
           phone?: string | null;
           curriculum_completed_at?: string | null;
+          school_year?: string | null;
+          tutoring_goal?: string | null;
+          tutor_notes?: string | null;
+          preferred_language?: string | null;
+          weakness_notes?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -134,6 +156,21 @@ export type Database = {
           topic_key?: string;
           test_date?: string;
           label?: string | null;
+          created_at?: string;
+        };
+        Relationships: Relationships;
+      };
+      student_weaknesses: {
+        Row: StudentWeaknessRow;
+        Insert: {
+          id?: string;
+          student_id: string;
+          topic_key: string;
+          created_at?: string;
+        };
+        Update: {
+          student_id?: string;
+          topic_key?: string;
           created_at?: string;
         };
         Relationships: Relationships;
