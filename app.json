@@ -8,9 +8,13 @@
     "scheme": "ping",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "sg.ping.app",
+      "buildNumber": "1"
     },
     "android": {
+      "package": "sg.ping.app",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#EEF4FF",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
