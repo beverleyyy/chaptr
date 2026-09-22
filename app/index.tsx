@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: fonts.extraBold,
     fontSize: 30,
-    color: colors.cream,
+    color: colors.navy,
     letterSpacing: -0.3,
   },
   tagline: {

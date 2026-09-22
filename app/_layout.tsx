@@ -19,7 +19,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 function RootStack() {
   return (
     <>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       <Stack
         screenOptions={{
           headerShown: false,

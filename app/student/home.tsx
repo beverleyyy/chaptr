@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 22,
     borderTopWidth: 1,
     borderTopColor: colors.hairline,
-    backgroundColor: colors.ink2,
+    backgroundColor: colors.cream,
   },
   navItem: { alignItems: 'center', gap: 5 },
   navItemActive: { alignItems: 'center', gap: 5 },

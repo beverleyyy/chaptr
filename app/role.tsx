@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
   brand: {
     fontFamily: fonts.extraBold,
     fontSize: 28,
-    color: colors.cream,
+    color: colors.navy,
     marginBottom: 8,
   },
   sub: {
