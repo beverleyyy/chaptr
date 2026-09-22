@@ -278,11 +278,11 @@ export function toMatchedTutorInfo(match: AcceptedMatch): MatchedTutorInfo {
     tutorId: match.tutor.id,
     name: match.tutor.name,
     initials: initialsFromName(match.tutor.name),
-    subject: match.session.subject,
-    topicKey: match.session.topic_key,
-    mins: match.session.mins,
-    location: match.session.location,
-    scheduledLabel: match.session.scheduled_label,
+    subject: match.request.subject,
+    topicKey: match.request.topic_key,
+    mins: match.request.mins,
+    location: match.request.location,
+    scheduledLabel: formatWhen(match.session.created_at),
   };
 }
 
@@ -437,14 +437,27 @@ export async function declineTutoringRequest(requestId: string): Promise<void> {
   if (!data) throw new Error(rpcErr.message || 'Request is no longer pending');
 }
 
+type SessionWithRequest = SessionRow & {
+  tutoring_requests: TutoringRequestRow | TutoringRequestRow[] | null;
+};
+
+function requestFromSession(s: SessionWithRequest): TutoringRequestRow | null {
+  const nested = s.tutoring_requests;
+  if (!nested) return null;
+  return Array.isArray(nested) ? nested[0] ?? null : nested;
+}
+
 export async function fetchTutorSessions(tutorId: string): Promise<{
   requests: Record<string, TutorRequest>;
   acceptedIds: string[];
 }> {
   const sb = requireSupabase();
+  // Subject/topic/mins/location live on tutoring_requests, not sessions.
   const { data, error } = await sb
     .from('sessions')
-    .select('*')
+    .select(
+      'id, request_id, tutor_id, student_id, video_link, status, created_at, completed_at, tutoring_requests ( id, student_id, topic_key, subject, mins, price, location, note, status, tutor_id, expires_at, created_at )',
+    )
     .eq('tutor_id', tutorId)
     .eq('status', 'scheduled')
     .order('created_at', { ascending: false });
@@ -454,29 +467,31 @@ export async function fetchTutorSessions(tutorId: string): Promise<{
     return { requests: {}, acceptedIds: [] };
   }
 
-  const rows = (data ?? []) as SessionRow[];
+  const rows = (data ?? []) as SessionWithRequest[];
   const profiles = await fetchProfilesByIds(rows.map((r) => r.student_id));
 
   const requests: Record<string, TutorRequest> = {};
   const acceptedIds: string[] = [];
   for (const s of rows) {
+    const req = requestFromSession(s);
     const student = profiles[s.student_id];
     const name = student?.name ? abbreviatedName(student.name) : 'Student';
     const initials = student?.name ? initialsFromName(student.name) : 'ST';
-    const id = s.request_id ?? s.id;
+    const id = s.request_id || s.id;
+    const location = (req?.location ?? 'video') as LocationType;
     requests[id] = {
       id,
       name,
       initials,
       band: 'Sec Express',
       continuity: 'Chaptr match',
-      subject: s.subject,
-      topicKey: s.topic_key,
-      time: s.scheduled_label ?? formatWhen(s.created_at),
-      mins: s.mins,
-      location: s.location,
-      distance: s.location === 'inperson' ? 'Nearby venue' : null,
-      note: null,
+      subject: req?.subject ?? 'Session',
+      topicKey: req?.topic_key ?? 'ch9',
+      time: formatWhen(s.created_at),
+      mins: req?.mins ?? 60,
+      location,
+      distance: location === 'inperson' ? 'Nearby venue' : null,
+      note: req?.note ?? null,
       timer: '',
       secondsLeft: 0,
     };
@@ -508,13 +523,23 @@ export async function fetchTutorEarnings(tutorId: string): Promise<{
   const sessionIds = earnings.map((e) => e.session_id).filter((id): id is string => !!id);
 
   let sessionsById: Record<string, SessionRow> = {};
+  let requestBySessionId: Record<string, TutoringRequestRow> = {};
   let profiles: Record<string, Profile> = {};
   if (sessionIds.length) {
-    const { data: sessions, error: sErr } = await sb.from('sessions').select('*').in('id', sessionIds);
+    const { data: sessions, error: sErr } = await sb
+      .from('sessions')
+      .select(
+        'id, request_id, tutor_id, student_id, video_link, status, created_at, completed_at, tutoring_requests ( id, student_id, topic_key, subject, mins, price, location, note, status, tutor_id, expires_at, created_at )',
+      )
+      .in('id', sessionIds);
     if (sErr) {
       console.warn('fetchTutorEarnings sessions', formatApiError(sErr));
     } else {
-      for (const s of (sessions ?? []) as SessionRow[]) sessionsById[s.id] = s;
+      for (const raw of (sessions ?? []) as SessionWithRequest[]) {
+        sessionsById[raw.id] = raw;
+        const req = requestFromSession(raw);
+        if (req) requestBySessionId[raw.id] = req;
+      }
       profiles = await fetchProfilesByIds(
         Object.values(sessionsById).map((s) => s.student_id),
       );
@@ -529,14 +554,15 @@ export async function fetchTutorEarnings(tutorId: string): Promise<{
 
   for (const e of earnings) {
     const session = e.session_id ? sessionsById[e.session_id] : undefined;
-    const topic = session?.topic_key ? TOPICS[session.topic_key] : null;
+    const req = e.session_id ? requestBySessionId[e.session_id] : undefined;
+    const topic = req?.topic_key ? TOPICS[req.topic_key] : null;
     const student = session ? profiles[session.student_id] : undefined;
     const studentName = student?.name
       ? abbreviatedName(student.name).replace(/\s/g, '')
       : '—';
 
     rows.push({
-      subject: session?.subject ?? 'Session',
+      subject: req?.subject ?? 'Session',
       chapterSpine: topic?.spine ?? '—',
       time: session ? formatWhen(session.created_at) : formatWhen(e.created_at),
       student: studentName,

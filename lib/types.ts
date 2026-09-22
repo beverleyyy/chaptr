@@ -29,19 +29,16 @@ export type TutoringRequestRow = {
   created_at: string;
 };
 
+/** Live sessions columns (subject/topic/mins/location live on tutoring_requests). */
 export type SessionRow = {
   id: string;
-  request_id: string | null;
+  request_id: string;
   student_id: string;
   tutor_id: string;
-  topic_key: string;
-  subject: string;
-  mins: number;
-  location: LocationType;
-  scheduled_label: string | null;
+  video_link: string | null;
   status: SessionStatus;
-  payout_amount: number | null;
   created_at: string;
+  completed_at: string | null;
 };
 
 export type EarningRowDb = {
@@ -114,30 +111,22 @@ export type Database = {
         Row: SessionRow;
         Insert: {
           id?: string;
-          request_id?: string | null;
+          request_id: string;
           student_id: string;
           tutor_id: string;
-          topic_key: string;
-          subject: string;
-          mins: number;
-          location: LocationType;
-          scheduled_label?: string | null;
+          video_link?: string | null;
           status?: SessionStatus;
-          payout_amount?: number | null;
           created_at?: string;
+          completed_at?: string | null;
         };
         Update: {
-          request_id?: string | null;
+          request_id?: string;
           student_id?: string;
           tutor_id?: string;
-          topic_key?: string;
-          subject?: string;
-          mins?: number;
-          location?: LocationType;
-          scheduled_label?: string | null;
+          video_link?: string | null;
           status?: SessionStatus;
-          payout_amount?: number | null;
           created_at?: string;
+          completed_at?: string | null;
         };
         Relationships: Relationships;
       };
