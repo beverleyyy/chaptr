@@ -154,10 +154,15 @@ export default function StudentHome() {
             <Ionicons name="time-outline" size={21} color={colors.textDim} />
             <Text style={styles.navLabel}>History</Text>
           </View>
-          <View style={styles.navItem}>
+          <Pressable
+            style={styles.navItem}
+            onPress={() => router.push('/student/profile')}
+            accessibilityRole="button"
+            accessibilityLabel="Profile"
+          >
             <Ionicons name="person-outline" size={21} color={colors.textDim} />
             <Text style={styles.navLabel}>Profile</Text>
-          </View>
+          </Pressable>
         </View>
       </View>
     </Screen>
