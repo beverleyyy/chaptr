@@ -22,6 +22,7 @@ export type CreateRequestInput = {
   note?: string | null;
   name?: string | null;
   phone?: string | null;
+  stripePaymentIntentId?: string | null;
 };
 
 export type AcceptedMatch = {
@@ -210,6 +211,7 @@ export async function createTutoringRequest(input: CreateRequestInput): Promise<
     p_note: input.note ?? null,
     p_name: input.name ?? null,
     p_phone: input.phone ?? null,
+    p_stripe_payment_intent_id: input.stripePaymentIntentId ?? null,
   });
   if (!rpcErr && rpcData) {
     return rpcData as TutoringRequestRow;
@@ -230,6 +232,7 @@ export async function createTutoringRequest(input: CreateRequestInput): Promise<
       location: input.location,
       note: input.note ?? null,
       status: 'pending',
+      stripe_payment_intent_id: input.stripePaymentIntentId ?? null,
     })
     .select()
     .single();

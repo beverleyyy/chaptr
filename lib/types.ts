@@ -27,6 +27,7 @@ export type TutoringRequestRow = {
   tutor_id: string | null;
   expires_at: string;
   created_at: string;
+  stripe_payment_intent_id?: string | null;
 };
 
 /** Live sessions columns (subject/topic/mins/location live on tutoring_requests). */
@@ -91,6 +92,7 @@ export type Database = {
           tutor_id?: string | null;
           expires_at?: string;
           created_at?: string;
+          stripe_payment_intent_id?: string | null;
         };
         Update: {
           student_id?: string;
@@ -104,6 +106,7 @@ export type Database = {
           tutor_id?: string | null;
           expires_at?: string;
           created_at?: string;
+          stripe_payment_intent_id?: string | null;
         };
         Relationships: Relationships;
       };
@@ -175,6 +178,7 @@ export type Database = {
           p_note?: string | null;
           p_name?: string | null;
           p_phone?: string | null;
+          p_stripe_payment_intent_id?: string | null;
         };
         Returns: TutoringRequestRow;
       };

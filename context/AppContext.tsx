@@ -92,7 +92,11 @@ type AppState = {
   toastRequestId: string | null;
   dismissToast: () => void;
   /** Create a tutoring request after mock/real payment confirm. */
-  submitBookingRequest: (subject: string, note?: string | null) => Promise<string | null>;
+  submitBookingRequest: (
+    subject: string,
+    note?: string | null,
+    stripePaymentIntentId?: string | null,
+  ) => Promise<string | null>;
   refreshTutorData: () => Promise<void>;
   tutorDataError: string | null;
   earningsRows: EarningRow[];
@@ -324,7 +328,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const submitBookingRequest = useCallback(
-    async (subject: string, note?: string | null) => {
+    async (subject: string, note?: string | null, stripePaymentIntentId?: string | null) => {
       if (!usingBackend) return null;
       if (!user?.id) throw new Error('Sign in required to create a request');
 
@@ -361,6 +365,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           note: note ?? null,
           name,
           phone: profile?.phone ?? null,
+          stripePaymentIntentId: stripePaymentIntentId ?? null,
         });
         setLiveRequestId(row.id);
         setMatchedTutor(null);

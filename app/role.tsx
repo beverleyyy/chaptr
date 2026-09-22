@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
 import { colors, fonts } from '@/constants/theme';
+import { isStripePublishableConfigured } from '@/lib/paynowApi';
 
 export default function RolePicker() {
   const router = useRouter();
@@ -95,7 +96,9 @@ export default function RolePicker() {
           </View>
           <Text style={styles.note}>
             {configured
-              ? 'Connected to Supabase — requests & sessions sync when online. Payments remain mock.'
+              ? isStripePublishableConfigured()
+                ? 'Connected to Supabase — requests & sessions sync when online. PayNow uses Stripe test mode when the Edge Function secret is set.'
+                : 'Connected to Supabase — requests & sessions sync when online. Add EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY for live PayNow QR.'
               : 'Mock data only — set EXPO_PUBLIC_SUPABASE_* in .env for real auth & data.'}
           </Text>
         </>
