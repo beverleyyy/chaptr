@@ -1,18 +1,10 @@
 import type { CurriculumSubjectKey } from '@/constants/curriculum';
 import { CURRICULUM_SUBJECTS } from '@/constants/curriculum';
 import { colors } from '@/constants/theme';
+import { TOPICS as CATALOGUE_TOPICS, type Topic } from '@/constants/topicsCatalogue';
 
-export type Topic = {
-  id: string;
-  spine: string;
-  title: string;
-  subject: string;
-  subjectKey: CurriculumSubjectKey;
-  band: string;
-  tag?: string;
-  lastCovered?: string;
-  highlight?: boolean;
-};
+export type { Topic };
+export { topicCountsBySubject } from '@/constants/topicsCatalogue';
 
 export type TutorRequest = {
   id: string;
@@ -54,454 +46,8 @@ export type EarningRow = {
   status: 'paid' | 'pending';
 };
 
-export const TOPICS: Record<string, Topic> = {
-  ch9: {
-    id: 'ch9',
-    spine: '9',
-    title: 'Quadratic Equations & Inequalities',
-    subject: 'A Maths',
-    subjectKey: 'amaths',
-    band: 'G3',
-    tag: 'Test in 5 days',
-    highlight: true,
-  },
-  ch7: {
-    id: 'ch7',
-    spine: '7',
-    title: 'Trigonometric Functions',
-    subject: 'A Maths',
-    subjectKey: 'amaths',
-    band: 'G3',
-    lastCovered: 'Last covered 2 weeks ago',
-  },
-  ch10: {
-    id: 'ch10',
-    spine: '10',
-    title: 'Differentiation & Rates of Change',
-    subject: 'A Maths',
-    subjectKey: 'amaths',
-    band: 'G3',
-  },
-  em13: {
-    id: 'em13',
-    spine: '13',
-    title: "Pythagoras' Theorem & Trigonometry",
-    subject: 'E Maths',
-    subjectKey: 'emaths',
-    band: 'G3',
-    tag: 'Test in 4 days',
-    highlight: true,
-  },
-  em7: {
-    id: 'em7',
-    spine: '7',
-    title: 'Equations & Inequalities',
-    subject: 'E Maths',
-    subjectKey: 'emaths',
-    band: 'G3',
-    lastCovered: 'Last covered 1 week ago',
-  },
-  em14: {
-    id: 'em14',
-    spine: '14',
-    title: 'Mensuration',
-    subject: 'E Maths',
-    subjectKey: 'emaths',
-    band: 'G3',
-  },
-  ph14: {
-    id: 'ph14',
-    spine: '14',
-    title: 'Current of Electricity',
-    subject: 'Physics',
-    subjectKey: 'physics',
-    band: 'G3',
-    tag: 'Test in 6 days',
-    highlight: true,
-  },
-  ph2: {
-    id: 'ph2',
-    spine: '2',
-    title: 'Kinematics',
-    subject: 'Physics',
-    subjectKey: 'physics',
-    band: 'G3',
-    lastCovered: 'Last covered 3 weeks ago',
-  },
-  ph18: {
-    id: 'ph18',
-    spine: '18',
-    title: 'Electromagnetism',
-    subject: 'Physics',
-    subjectKey: 'physics',
-    band: 'G3',
-  },
-  chem4: {
-    id: 'chem4',
-    spine: '4',
-    title: 'Chemical Calculations',
-    subject: 'Chemistry',
-    subjectKey: 'chem',
-    band: 'G3',
-    tag: 'Test in 3 days',
-    highlight: true,
-  },
-  chem8: {
-    id: 'chem8',
-    spine: '8',
-    title: 'Patterns in the Periodic Table',
-    subject: 'Chemistry',
-    subjectKey: 'chem',
-    band: 'G3',
-    lastCovered: 'Last covered 1 week ago',
-  },
-  chem11: {
-    id: 'chem11',
-    spine: '11',
-    title: 'Organic Chemistry',
-    subject: 'Chemistry',
-    subjectKey: 'chem',
-    band: 'G3',
-  },
-  // English Language
-  eng1: {
-    id: 'eng1',
-    spine: '1',
-    title: 'Continuous Writing & Situational Writing',
-    subject: 'English',
-    subjectKey: 'english',
-    band: 'G3',
-    highlight: true,
-  },
-  eng2: {
-    id: 'eng2',
-    spine: '2',
-    title: 'Comprehension & Summary',
-    subject: 'English',
-    subjectKey: 'english',
-    band: 'G3',
-  },
-  eng3: {
-    id: 'eng3',
-    spine: '3',
-    title: 'Oral Communication & Listening',
-    subject: 'English',
-    subjectKey: 'english',
-    band: 'G3',
-  },
-  // Biology
-  bio1: {
-    id: 'bio1',
-    spine: '1',
-    title: 'Cell Structure & Organisation',
-    subject: 'Biology',
-    subjectKey: 'biology',
-    band: 'G3',
-    highlight: true,
-  },
-  bio2: {
-    id: 'bio2',
-    spine: '2',
-    title: 'Nutrition & Transport in Humans',
-    subject: 'Biology',
-    subjectKey: 'biology',
-    band: 'G3',
-  },
-  bio3: {
-    id: 'bio3',
-    spine: '3',
-    title: 'Coordination & Response',
-    subject: 'Biology',
-    subjectKey: 'biology',
-    band: 'G3',
-  },
-  // Mother Tongue — Chinese
-  zh1: {
-    id: 'zh1',
-    spine: '1',
-    title: 'Paper 1 Composition',
-    subject: 'Chinese',
-    subjectKey: 'chinese',
-    band: 'G3',
-    highlight: true,
-  },
-  zh2: {
-    id: 'zh2',
-    spine: '2',
-    title: 'Comprehension & Cloze',
-    subject: 'Chinese',
-    subjectKey: 'chinese',
-    band: 'G3',
-  },
-  zh3: {
-    id: 'zh3',
-    spine: '3',
-    title: 'Oral & Listening Comprehension',
-    subject: 'Chinese',
-    subjectKey: 'chinese',
-    band: 'G3',
-  },
-  // Mother Tongue — Malay
-  ms1: {
-    id: 'ms1',
-    spine: '1',
-    title: 'Karangan (Composition)',
-    subject: 'Malay',
-    subjectKey: 'malay',
-    band: 'G3',
-    highlight: true,
-  },
-  ms2: {
-    id: 'ms2',
-    spine: '2',
-    title: 'Kefahaman & Cloze',
-    subject: 'Malay',
-    subjectKey: 'malay',
-    band: 'G3',
-  },
-  ms3: {
-    id: 'ms3',
-    spine: '3',
-    title: 'Lisan & Pendengaran',
-    subject: 'Malay',
-    subjectKey: 'malay',
-    band: 'G3',
-  },
-  // Mother Tongue — Tamil
-  ta1: {
-    id: 'ta1',
-    spine: '1',
-    title: 'Composition & Letter Writing',
-    subject: 'Tamil',
-    subjectKey: 'tamil',
-    band: 'G3',
-    highlight: true,
-  },
-  ta2: {
-    id: 'ta2',
-    spine: '2',
-    title: 'Comprehension & Language Use',
-    subject: 'Tamil',
-    subjectKey: 'tamil',
-    band: 'G3',
-  },
-  ta3: {
-    id: 'ta3',
-    spine: '3',
-    title: 'Oral & Listening',
-    subject: 'Tamil',
-    subjectKey: 'tamil',
-    band: 'G3',
-  },
-  // Combined Science — Physics/Chemistry
-  cspc1: {
-    id: 'cspc1',
-    spine: '1',
-    title: 'Forces, Pressure & Energy',
-    subject: 'CS Phy/Chem',
-    subjectKey: 'cs_phy_chem',
-    band: 'G3',
-    highlight: true,
-  },
-  cspc2: {
-    id: 'cspc2',
-    spine: '2',
-    title: 'Atomic Structure & Chemical Bonding',
-    subject: 'CS Phy/Chem',
-    subjectKey: 'cs_phy_chem',
-    band: 'G3',
-  },
-  cspc3: {
-    id: 'cspc3',
-    spine: '3',
-    title: 'Electricity & Chemical Reactions',
-    subject: 'CS Phy/Chem',
-    subjectKey: 'cs_phy_chem',
-    band: 'G3',
-  },
-  // Combined Science — Chemistry/Biology
-  cscb1: {
-    id: 'cscb1',
-    spine: '1',
-    title: 'Chemical Bonding & Stoichiometry',
-    subject: 'CS Chem/Bio',
-    subjectKey: 'cs_chem_bio',
-    band: 'G3',
-    highlight: true,
-  },
-  cscb2: {
-    id: 'cscb2',
-    spine: '2',
-    title: 'Cell Biology & Enzymes',
-    subject: 'CS Chem/Bio',
-    subjectKey: 'cs_chem_bio',
-    band: 'G3',
-  },
-  cscb3: {
-    id: 'cscb3',
-    spine: '3',
-    title: 'Acids, Bases & Human Physiology',
-    subject: 'CS Chem/Bio',
-    subjectKey: 'cs_chem_bio',
-    band: 'G3',
-  },
-  // Combined Science — Physics/Biology
-  cspb1: {
-    id: 'cspb1',
-    spine: '1',
-    title: 'Kinematics & Forces',
-    subject: 'CS Phy/Bio',
-    subjectKey: 'cs_phy_bio',
-    band: 'G3',
-    highlight: true,
-  },
-  cspb2: {
-    id: 'cspb2',
-    spine: '2',
-    title: 'Energy & Waves',
-    subject: 'CS Phy/Bio',
-    subjectKey: 'cs_phy_bio',
-    band: 'G3',
-  },
-  cspb3: {
-    id: 'cspb3',
-    spine: '3',
-    title: 'Transport & Coordination in Humans',
-    subject: 'CS Phy/Bio',
-    subjectKey: 'cs_phy_bio',
-    band: 'G3',
-  },
-  // Geography
-  geo1: {
-    id: 'geo1',
-    spine: '1',
-    title: 'Plate Tectonics & Weathering',
-    subject: 'Geography',
-    subjectKey: 'geography',
-    band: 'G3',
-    highlight: true,
-  },
-  geo2: {
-    id: 'geo2',
-    spine: '2',
-    title: 'Weather & Climate',
-    subject: 'Geography',
-    subjectKey: 'geography',
-    band: 'G3',
-  },
-  geo3: {
-    id: 'geo3',
-    spine: '3',
-    title: 'Tourism & Living with Tectonic Hazards',
-    subject: 'Geography',
-    subjectKey: 'geography',
-    band: 'G3',
-  },
-  // History
-  hist1: {
-    id: 'hist1',
-    spine: '1',
-    title: 'Source-Based Skills',
-    subject: 'History',
-    subjectKey: 'history',
-    band: 'G3',
-    highlight: true,
-  },
-  hist2: {
-    id: 'hist2',
-    spine: '2',
-    title: 'Outbreak of WWII in Asia-Pacific',
-    subject: 'History',
-    subjectKey: 'history',
-    band: 'G3',
-  },
-  hist3: {
-    id: 'hist3',
-    spine: '3',
-    title: 'Cold War & Decolonisation',
-    subject: 'History',
-    subjectKey: 'history',
-    band: 'G3',
-  },
-  // Literature in English
-  lit1: {
-    id: 'lit1',
-    spine: '1',
-    title: 'Poetry Analysis',
-    subject: 'Literature',
-    subjectKey: 'literature',
-    band: 'G3',
-    highlight: true,
-  },
-  lit2: {
-    id: 'lit2',
-    spine: '2',
-    title: 'Prose & Unseen Texts',
-    subject: 'Literature',
-    subjectKey: 'literature',
-    band: 'G3',
-  },
-  lit3: {
-    id: 'lit3',
-    spine: '3',
-    title: 'Drama & Set Texts',
-    subject: 'Literature',
-    subjectKey: 'literature',
-    band: 'G3',
-  },
-  // Principles of Accounts
-  poa1: {
-    id: 'poa1',
-    spine: '1',
-    title: 'Double-Entry & Journals',
-    subject: 'POA',
-    subjectKey: 'poa',
-    band: 'G3',
-    highlight: true,
-  },
-  poa2: {
-    id: 'poa2',
-    spine: '2',
-    title: 'Ledger Accounts & Trial Balance',
-    subject: 'POA',
-    subjectKey: 'poa',
-    band: 'G3',
-  },
-  poa3: {
-    id: 'poa3',
-    spine: '3',
-    title: 'Financial Statements',
-    subject: 'POA',
-    subjectKey: 'poa',
-    band: 'G3',
-  },
-  // Computing
-  cmp1: {
-    id: 'cmp1',
-    spine: '1',
-    title: 'Algorithms & Flowcharts',
-    subject: 'Computing',
-    subjectKey: 'computing',
-    band: 'G3',
-    highlight: true,
-  },
-  cmp2: {
-    id: 'cmp2',
-    spine: '2',
-    title: 'Python Programming Basics',
-    subject: 'Computing',
-    subjectKey: 'computing',
-    band: 'G3',
-  },
-  cmp3: {
-    id: 'cmp3',
-    spine: '3',
-    title: 'Data Structures & Networks',
-    subject: 'Computing',
-    subjectKey: 'computing',
-    band: 'G3',
-  },
-};
+/** Full SEAB / SEC chapter catalogues — see topicsCatalogue.ts. */
+export const TOPICS: Record<string, Topic> = CATALOGUE_TOPICS;
 
 /** Full curriculum subject list for pickers (ordered by tuition demand). */
 export const SUBJECTS = CURRICULUM_SUBJECTS.map((s) => ({
@@ -515,7 +61,8 @@ export function topicsForSubjectKey(
 ): Topic[] {
   return Object.values(TOPICS)
     .filter((t) => t.subjectKey === subjectKey)
-    .map((t) => (level ? { ...t, band: level } : t));
+    .map((t) => (level ? { ...t, band: level } : t))
+    .sort((a, b) => Number(a.spine) - Number(b.spine));
 }
 
 export const DURATIONS = [
@@ -598,12 +145,12 @@ export const INITIAL_REQUESTS: Record<string, TutorRequest> = {
     band: 'Sec 3 Express',
     continuity: '3rd session with you',
     subject: 'A Maths',
-    topicKey: 'ch9',
+    topicKey: 'am_02',
     time: 'Today, 7:30pm',
     mins: 60,
     location: 'inperson',
     distance: '8 min away',
-    note: 'Ch.7 Trig Functions, with Ms. Tan — solid on factorising; still shaky on completing the square.',
+    note: 'Ch.2 Equations & Inequalities, with Ms. Tan — solid on factorising; still shaky on completing the square.',
     timer: '0:47',
   }),
   req2: withSeconds({
@@ -613,7 +160,7 @@ export const INITIAL_REQUESTS: Record<string, TutorRequest> = {
     band: 'Sec 4 Express',
     continuity: '1st session with you',
     subject: 'Physics',
-    topicKey: 'ph14',
+    topicKey: 'ph_14',
     time: 'Today, 8:00pm',
     mins: 90,
     location: 'video',
@@ -628,7 +175,7 @@ export const INITIAL_REQUESTS: Record<string, TutorRequest> = {
     band: 'Sec 3 NA',
     continuity: '2nd session with you',
     subject: 'Chemistry',
-    topicKey: 'chem8',
+    topicKey: 'cm_08',
     time: 'Today, 8:30pm',
     mins: 60,
     location: 'inperson',
@@ -643,7 +190,7 @@ export const INITIAL_REQUESTS: Record<string, TutorRequest> = {
     band: 'Sec 4 Express',
     continuity: '5th session with you',
     subject: 'E Maths',
-    topicKey: 'em13',
+    topicKey: 'em_14',
     time: 'Today, 9:00pm',
     mins: 30,
     location: 'video',
@@ -658,7 +205,7 @@ export const INITIAL_REQUESTS: Record<string, TutorRequest> = {
     band: 'Sec 3 Express',
     continuity: '1st session with you',
     subject: 'A Maths',
-    topicKey: 'ch7',
+    topicKey: 'am_08',
     time: 'Tomorrow, 4:00pm',
     mins: 120,
     location: 'inperson',
@@ -675,7 +222,7 @@ export const EXTRA_REQUEST: TutorRequest = withSeconds({
   band: 'Sec 3 NA',
   continuity: '1st session with you',
   subject: 'E Maths',
-  topicKey: 'em7',
+  topicKey: 'em_07',
   time: 'Today, 9:30pm',
   mins: 60,
   location: 'inperson',
@@ -692,7 +239,7 @@ export const SCHEDULE_SEED: Record<string, ScheduleSeed> = {
     name: 'P. W.',
     initials: 'PW',
     subject: 'Physics',
-    topicKey: 'ph2',
+    topicKey: 'ph_02',
     time: 'Tomorrow, 6:00pm',
     mins: 60,
     location: 'video',
@@ -702,7 +249,7 @@ export const SCHEDULE_SEED: Record<string, ScheduleSeed> = {
     name: 'A. L.',
     initials: 'AL',
     subject: 'A Maths',
-    topicKey: 'ch7',
+    topicKey: 'am_08',
     time: 'Thu, 7:30pm',
     mins: 90,
     location: 'inperson',
@@ -718,7 +265,7 @@ export const EARNINGS: EarningRow[] = [
 ];
 
 export const HANDOFF_NOTE =
-  'Ch.7 Trig Functions, with Ms. Tan — solid on factorising; still shaky on completing the square.';
+  'Ch.8 Trigonometric Functions, with Ms. Tan — solid on factorising; still shaky on completing the square.';
 
 export const DUMMY_ADDRESS = 'Chaptr Study Hub · 2 Science Drive 2, #01-08';
 export const DUMMY_ADDRESS_PLAIN = 'Chaptr Study Hub, 2 Science Drive 2, #01-08';

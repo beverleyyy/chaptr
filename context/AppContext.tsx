@@ -129,7 +129,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [studentConsented, setStudentConsented] = useState(false);
   const [tutorConsented, setTutorConsented] = useState(false);
   const [booking, setBookingState] = useState<Booking>({
-    topicId: 'ch9',
+    topicId: 'am_02',
     mins: 60,
     price: 20,
     location: 'inperson',

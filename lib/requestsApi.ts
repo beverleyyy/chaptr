@@ -495,7 +495,7 @@ export async function fetchTutorSessions(tutorId: string): Promise<{
       band: 'Sec Express',
       continuity: 'Chaptr match',
       subject: req?.subject ?? 'Session',
-      topicKey: req?.topic_key ?? 'ch9',
+      topicKey: req?.topic_key ?? 'am_02',
       time: formatWhen(s.created_at),
       mins: req?.mins ?? 60,
       location,

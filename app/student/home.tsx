@@ -117,7 +117,8 @@ export default function StudentHome() {
 
         <View style={styles.listHeader}>
           <Text style={styles.listTitle}>
-            {subjectLabel} · {activeLevel} topics
+            {subjectLabel} · {activeLevel} · {topics.length} chapter
+            {topics.length === 1 ? '' : 's'}
           </Text>
           <Text style={styles.listHint}>Tap a topic to book</Text>
         </View>
