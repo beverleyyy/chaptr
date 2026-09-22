@@ -295,6 +295,9 @@ export function CheckCircle({ size = 56 }: { size?: number }) {
   );
 }
 
+/** Ribbon body width. The pointed tip uses half of this on each side. */
+const SPINE_WIDTH = 48;
+
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
@@ -390,31 +393,36 @@ const styles = StyleSheet.create({
   },
   tagTextAmber: {},
   spineWrap: {
-    width: 38,
+    width: SPINE_WIDTH,
     marginRight: 14,
     alignItems: 'center',
   },
   spine: {
-    width: 38,
-    paddingTop: 9,
-    paddingBottom: 8,
+    width: SPINE_WIDTH,
+    paddingTop: 14,
+    paddingBottom: 12,
+    paddingHorizontal: 7,
     alignItems: 'center',
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
+    justifyContent: 'center',
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
   },
   spineAccent: { backgroundColor: colors.accent },
   spineMuted: { backgroundColor: colors.ink3 },
   spineText: {
     fontFamily: fonts.extraBold,
     fontSize: 16,
+    lineHeight: 20,
     color: colors.text,
+    textAlign: 'center',
+    includeFontPadding: false,
   },
   spineTip: {
     width: 0,
     height: 0,
-    borderLeftWidth: 19,
-    borderRightWidth: 19,
-    borderTopWidth: 7,
+    borderLeftWidth: SPINE_WIDTH / 2,
+    borderRightWidth: SPINE_WIDTH / 2,
+    borderTopWidth: 8,
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
   },
