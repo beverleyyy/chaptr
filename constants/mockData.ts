@@ -179,9 +179,20 @@ export function parseTimerToSeconds(str: string): number {
 
 export function formatSeconds(s: number): string {
   if (s < 0) s = 0;
-  const m = Math.floor(s / 60);
-  const sec = s % 60;
-  return `${m}:${sec < 10 ? '0' : ''}${sec}`;
+  if (s < 60) return `${s}s`;
+  if (s < 60 * 60) {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${sec < 10 ? '0' : ''}${sec}`;
+  }
+  if (s < 24 * 60 * 60) {
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    return `${h}h ${m}m`;
+  }
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  return `${d}d ${h}h`;
 }
 
 export function durationLabel(mins: number): string {
