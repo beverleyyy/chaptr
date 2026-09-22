@@ -36,6 +36,7 @@ type PayPhase =
 function isPaymentReturnUrl(url: string | null | undefined): boolean {
   if (!url) return false;
   return (
+    url.startsWith('ping://payment-return') ||
     url.startsWith('chaptr://payment-return') ||
     url.includes('://payment-return')
   );
@@ -211,7 +212,8 @@ export default function Payment() {
     return () => sub.remove();
   }, [stripeLive, pollOnce]);
 
-  // Lightweight deep-link: Stripe return_url is chaptr://payment-return (scheme in app.json)
+  // Lightweight deep-link: Stripe return_url is ping://payment-return.
+  // chaptr:// stays accepted for PaymentIntents created before the scheme change.
   useEffect(() => {
     if (!stripeLive) return;
 
