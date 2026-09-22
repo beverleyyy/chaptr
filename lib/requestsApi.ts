@@ -9,7 +9,7 @@ import type {
   UserRole,
 } from '@/lib/types';
 import type { EarningRow, TutorRequest } from '@/constants/mockData';
-import { TOPICS } from '@/constants/mockData';
+import { resolveTopic } from '@/constants/mockData';
 import {
   fetchWeaknessesForStudents,
   formatTutorInsightPreview,
@@ -579,7 +579,7 @@ export async function fetchTutorEarnings(tutorId: string): Promise<{
   for (const e of earnings) {
     const session = e.session_id ? sessionsById[e.session_id] : undefined;
     const req = e.session_id ? requestBySessionId[e.session_id] : undefined;
-    const topic = req?.topic_key ? TOPICS[req.topic_key] : null;
+    const topic = req?.topic_key ? resolveTopic(req.topic_key) : null;
     const student = session ? profiles[session.student_id] : undefined;
     const studentName = student?.name
       ? abbreviatedName(student.name).replace(/\s/g, '')

@@ -7,7 +7,7 @@ import {
   DUMMY_ZOOM,
   durationLabel,
   payoutFor,
-  TOPICS,
+  resolveTopic,
 } from '@/constants/mockData';
 import { colors, fonts } from '@/constants/theme';
 
@@ -17,7 +17,13 @@ export default function TutorAccepted() {
   const id = currentRequestId ?? acceptedRequestIds[acceptedRequestIds.length - 1];
   const r = id ? requests[id] : null;
   if (!r) return null;
-  const t = TOPICS[r.topicKey];
+  const t = resolveTopic(r.topicKey);
+  const topicHeading = t
+    ? `${r.subject} · Ch.${t.spine}`
+    : r.topicKey?.trim()
+      ? `${r.subject} · ${r.topicKey}`
+      : `${r.subject} · Topic`;
+  const topicTitle = t?.title ?? (r.topicKey?.trim() || 'Topic details unavailable');
   const meet =
     r.location === 'video' ? `Join at ${DUMMY_ZOOM}` : `Meet at ${DUMMY_ADDRESS_PLAIN}`;
 
@@ -34,12 +40,10 @@ export default function TutorAccepted() {
 
         <Card style={styles.card}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text style={styles.topic}>
-              {r.subject} · Ch.{t.spine}
-            </Text>
+            <Text style={styles.topic}>{topicHeading}</Text>
             <Text style={styles.payout}>${payoutFor(r.mins)} payout</Text>
           </View>
-          <DimText style={{ marginTop: 8, fontSize: 12.5 }}>{t.title}</DimText>
+          <DimText style={{ marginTop: 8, fontSize: 12.5 }}>{topicTitle}</DimText>
           <View style={styles.divider} />
           <DimText style={{ fontSize: 12.5, lineHeight: 18 }}>
             Remember to fill in a Handoff Log at the end of the session — it&apos;s what the next tutor
