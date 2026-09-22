@@ -91,6 +91,7 @@ export default function TutorPending() {
     <Screen glow="left">
       <BackHeader
         title="New request"
+        titleStyle={{ color: colors.success }}
         onBack={() => router.back()}
         right={<Tag label={`Wait ${formatSeconds(r.secondsWaiting)}`} amber />}
       />

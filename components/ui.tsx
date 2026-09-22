@@ -196,10 +196,12 @@ export function BackHeader({
   title,
   onBack,
   right,
+  titleStyle,
 }: {
   title: string;
   onBack: () => void;
   right?: React.ReactNode;
+  titleStyle?: StyleProp<TextStyle>;
 }) {
   return (
     <View style={styles.backHeader}>
@@ -207,7 +209,7 @@ export function BackHeader({
         <Pressable onPress={onBack} hitSlop={12}>
           <Ionicons name="chevron-back" size={22} color={colors.text} />
         </Pressable>
-        <Display style={{ fontSize: 19 }}>{title}</Display>
+        <Display style={[{ fontSize: 19 }, titleStyle]}>{title}</Display>
       </View>
       {right}
     </View>
