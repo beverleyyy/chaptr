@@ -15,14 +15,18 @@ import {
   DUMMY_ADDRESS,
   DUMMY_ZOOM,
   durationLabel,
-  TOPICS,
+  resolveTopic,
 } from '@/constants/mockData';
 import { colors, fonts } from '@/constants/theme';
 
 export default function Matched() {
   const { booking, matchedTutor, usingBackend } = useApp();
   const router = useRouter();
-  const topic = TOPICS[matchedTutor?.topicKey ?? booking.topicId] ?? TOPICS[booking.topicId];
+  const topic =
+    resolveTopic(matchedTutor?.topicKey) ?? resolveTopic(booking.topicId);
+  const topicTitle =
+    topic?.title ??
+    ((matchedTutor?.topicKey || booking.topicId || '').trim() || 'Topic');
   const isVideo = (matchedTutor?.location ?? booking.location) === 'video';
   const tutorName = matchedTutor?.name ?? 'Mr. Rajan';
   const tutorInitials = matchedTutor?.initials ?? 'MR';
@@ -61,7 +65,7 @@ export default function Matched() {
             <StyleChip label="Visual explainer" />
           </View>
           <View style={styles.divider} />
-          <Text style={styles.topic}>{topic.title}</Text>
+          <Text style={styles.topic}>{topicTitle}</Text>
           <DimText style={{ marginTop: 4 }}>
             {whenLabel} · {durationLabel(mins)}
           </DimText>

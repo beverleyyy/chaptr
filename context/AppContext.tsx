@@ -18,6 +18,7 @@ import {
   TUTOR_SUBJECTS,
   TutorRequest,
   EarningRow,
+  resolveTopic,
 } from '@/constants/mockData';
 import type { StudentCurriculumEntry } from '@/constants/curriculum';
 import {
@@ -523,7 +524,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           throw new Error('Tutor accounts cannot create student booking requests');
         }
 
-        const topic = TOPICS[booking.topicId];
+        const topic = resolveTopic(booking.topicId);
         if (topic) {
           const allowed = studentCurriculum.some((c) => c.subjectKey === topic.subjectKey);
           if (!allowed) {

@@ -13,7 +13,13 @@ import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
 import { Screen, Card, Display, Tag, Avatar, Toggle, DimText, BtnGhost } from '@/components/ui';
 import { SessionCard } from '@/components/SessionCard';
-import { formatSeconds, TOPICS, waitToneColors, waitUrgency, type WaitUrgency } from '@/constants/mockData';
+import {
+  formatSeconds,
+  resolveTopic,
+  waitToneColors,
+  waitUrgency,
+  type WaitUrgency,
+} from '@/constants/mockData';
 import { colors, fonts } from '@/constants/theme';
 
 export default function TutorHome() {
@@ -90,7 +96,7 @@ export default function TutorHome() {
               <Text style={[styles.toastLabel, { color: toastTone.fg }]}>New request</Text>
               <Text style={styles.toastText}>
                 {toastReq.name} · {toastReq.subject} Ch.
-                {TOPICS[toastReq.topicKey]?.spine ?? '?'}
+                {resolveTopic(toastReq.topicKey)?.spine ?? '?'}
               </Text>
             </View>
             <Pressable style={styles.toastBtn} onPress={() => openRequest(toastRequestId)}>
@@ -189,7 +195,7 @@ export default function TutorHome() {
                 {pendingRequestIds.map((id) => {
                   const r = requests[id];
                   if (!r) return null;
-                  const t = TOPICS[r.topicKey];
+                  const t = resolveTopic(r.topicKey);
                   const urgency = waitUrgency(r.secondsWaiting);
                   const tone = waitToneColors(urgency);
                   return (

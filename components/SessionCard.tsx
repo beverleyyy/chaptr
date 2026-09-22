@@ -3,9 +3,9 @@ import { useApp } from '@/context/AppContext';
 import { Card, BtnGhost } from '@/components/ui';
 import {
   durationLabel,
+  formatSessionTopicLine,
   locationLabel,
   ScheduleSeed,
-  TOPICS,
   TutorRequest,
 } from '@/constants/mockData';
 import { colors, fonts } from '@/constants/theme';
@@ -14,16 +14,14 @@ type SessionLike = TutorRequest | ScheduleSeed;
 
 export function SessionCard({ id, session }: { id: string; session: SessionLike }) {
   const { cancelConfirmId, setCancelConfirmId, cancelSession } = useApp();
-  const t = TOPICS[session.topicKey];
+  const titleLine = formatSessionTopicLine(session.subject, session.topicKey);
   const confirming = cancelConfirmId === id;
 
   if (confirming) {
     return (
       <Card style={{ padding: 16 }}>
         <Text style={styles.warn}>Cancel this session?</Text>
-        <Text style={styles.title}>
-          {session.subject} · Ch.{t.spine} · {t.title}
-        </Text>
+        <Text style={styles.title}>{titleLine}</Text>
         <Text style={styles.sub}>
           {session.name} · {session.time}
         </Text>
@@ -53,9 +51,7 @@ export function SessionCard({ id, session }: { id: string; session: SessionLike 
           <Text style={styles.cancelLink}>Cancel</Text>
         </Pressable>
       </View>
-      <Text style={styles.title}>
-        {session.subject} · Ch.{t.spine} · {t.title}
-      </Text>
+      <Text style={styles.title}>{titleLine}</Text>
       <Text style={styles.sub}>
         {session.name} · {session.time} · {durationLabel(session.mins)} ·{' '}
         {locationLabel(session.location)}

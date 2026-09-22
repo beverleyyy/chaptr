@@ -16,7 +16,7 @@ import {
   BodyText,
 } from '@/components/ui';
 import { levelForSubject } from '@/lib/curriculumApi';
-import { DURATIONS, HANDOFF_NOTE, TOPICS } from '@/constants/mockData';
+import { DURATIONS, HANDOFF_NOTE, resolveTopic } from '@/constants/mockData';
 import { colors, fonts } from '@/constants/theme';
 
 export default function BookSession() {
@@ -28,7 +28,7 @@ export default function BookSession() {
     studentCurriculum,
   } = useApp();
   const router = useRouter();
-  const baseTopic = TOPICS[booking.topicId];
+  const baseTopic = resolveTopic(booking.topicId);
 
   const topic = useMemo(() => {
     if (!baseTopic) return null;

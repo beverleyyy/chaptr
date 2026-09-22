@@ -14,7 +14,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '@/context/AppContext';
 import { Screen, Card, Display, BackHeader, BtnPrimary, DimText } from '@/components/ui';
-import { HANDOFF_NOTE, TOPICS } from '@/constants/mockData';
+import { HANDOFF_NOTE, resolveTopic } from '@/constants/mockData';
 import { colors, fonts } from '@/constants/theme';
 import { PayNowQR } from '@/components/PayNowQR';
 import { formatApiError } from '@/lib/requestsApi';
@@ -52,7 +52,8 @@ export default function Payment() {
   const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
   const [checkingNow, setCheckingNow] = useState(false);
   const submittedRef = useRef(false);
-  const topic = TOPICS[booking.topicId];
+  const topic = resolveTopic(booking.topicId);
+  const subjectLabel = topic?.subject ?? 'Session';
 
   const stripeLive = usingBackend && isStripePublishableConfigured();
 
@@ -66,7 +67,7 @@ export default function Payment() {
       try {
         if (usingBackend) {
           const result = await Promise.race([
-            submitBookingRequest(topic.subject, HANDOFF_NOTE, piId),
+            submitBookingRequest(subjectLabel, HANDOFF_NOTE, piId),
             new Promise<never>((_, reject) =>
               setTimeout(
                 () =>
@@ -95,7 +96,7 @@ export default function Payment() {
         setBusy(false);
       }
     },
-    [usingBackend, submitBookingRequest, topic.subject, router],
+    [usingBackend, submitBookingRequest, subjectLabel, router],
   );
 
   const finishBookingRef = useRef(finishBooking);
@@ -147,7 +148,7 @@ export default function Payment() {
           amountCents: Math.round(Number(booking.price) * 100),
           currency: 'sgd',
           topicKey: booking.topicId,
-          subject: topic.subject,
+          subject: subjectLabel,
           mins: booking.mins,
           price: booking.price,
           location: booking.location,

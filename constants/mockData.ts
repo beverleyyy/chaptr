@@ -4,7 +4,11 @@ import { colors } from '@/constants/theme';
 import { TOPICS as CATALOGUE_TOPICS, type Topic } from '@/constants/topicsCatalogue';
 
 export type { Topic };
-export { topicCountsBySubject } from '@/constants/topicsCatalogue';
+export {
+  formatSessionTopicLine,
+  resolveTopic,
+  topicCountsBySubject,
+} from '@/constants/topicsCatalogue';
 
 export type TutorRequest = {
   id: string;

@@ -17,7 +17,7 @@ import {
 import {
   durationLabel,
   locationLabel,
-  TOPICS,
+  resolveTopic,
 } from '@/constants/mockData';
 import { colors, fonts } from '@/constants/theme';
 import {
@@ -37,7 +37,7 @@ export default function Matching() {
     setMatchedTutor,
   } = useApp();
   const router = useRouter();
-  const topic = TOPICS[booking.topicId];
+  const topic = resolveTopic(booking.topicId);
   const [status, setStatus] = useState<WaitStatus>('searching');
   const [statusDetail, setStatusDetail] = useState<string | null>(null);
 
@@ -112,11 +112,13 @@ export default function Matching() {
       <BackHeader title="Finding your tutor" onBack={() => router.back()} />
       <View style={styles.body}>
         <Card style={styles.topicCard}>
-          <Spine label={topic.spine} accent />
+          <Spine label={topic?.spine ?? '?'} accent />
           <View style={{ flex: 1 }}>
-            <Text style={styles.topicTitle}>{topic.title}</Text>
+            <Text style={styles.topicTitle}>
+              {topic?.title ?? (booking.topicId?.trim() || 'Topic')}
+            </Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
-              <Band label={topic.band} />
+              {topic ? <Band label={topic.band} /> : null}
               <Chip label={durationLabel(booking.mins)} />
               <Chip label={locationLabel(booking.location)} />
               <Chip label={`Paid $${booking.price}`} accent />

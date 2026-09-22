@@ -20,7 +20,7 @@ import {
   formatSeconds,
   locationLabel,
   payoutFor,
-  TOPICS,
+  resolveTopic,
   waitToneColors,
   waitUrgency,
 } from '@/constants/mockData';
@@ -56,7 +56,7 @@ export default function TutorPending() {
   }, [id, pendingRequestIds, router, acting]);
 
   if (!r || !id) return null;
-  const t = TOPICS[r.topicKey];
+  const t = resolveTopic(r.topicKey);
   const busy = acting || busyAction;
   const urgency = waitUrgency(r.secondsWaiting);
   const tone = waitToneColors(urgency);

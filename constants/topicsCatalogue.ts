@@ -382,6 +382,113 @@ export const TOPICS: Record<string, Topic> = {
   ...COMPUTING,
 };
 
+/**
+ * Pre-catalogue stub ids → current SEAB ids.
+ * Live/demo rows may still store the old keys after the topicsCatalogue expansion.
+ */
+const LEGACY_TOPIC_ALIASES: Record<string, string> = {
+  ch9: 'am_01',
+  ch7: 'am_08',
+  ch10: 'am_14',
+  em7: 'em_07',
+  em13: 'em_14', // old stub was Pythagoras; new em_13 is Congruence
+  em14: 'em_16',
+  ph2: 'ph_02',
+  ph14: 'ph_14',
+  ph18: 'ph_18',
+  chem4: 'cm_04',
+  chem8: 'cm_08',
+  chem11: 'cm_11',
+  eng1: 'en_01',
+  eng2: 'en_02',
+  eng3: 'en_03',
+  bio1: 'bi_01',
+  bio2: 'bi_02',
+  bio3: 'bi_03',
+  zh1: 'zh_01',
+  zh2: 'zh_02',
+  zh3: 'zh_03',
+  ms1: 'ms_01',
+  ms2: 'ms_02',
+  ms3: 'ms_03',
+  ta1: 'ta_01',
+  ta2: 'ta_02',
+  ta3: 'ta_03',
+  geo1: 'ge_01',
+  geo2: 'ge_02',
+  geo3: 'ge_03',
+  hist1: 'hi_01',
+  hist2: 'hi_02',
+  hist3: 'hi_03',
+  lit1: 'li_01',
+  lit2: 'li_02',
+  lit3: 'li_03',
+  poa1: 'pa_01',
+  poa2: 'pa_05',
+  poa3: 'pa_13',
+  cmp1: 'co_01',
+  cmp2: 'co_05',
+  cmp3: 'co_08',
+};
+
+/** Old stub prefixes → catalogue subject prefixes (for `em7` → `em_07` style keys). */
+const LEGACY_PREFIX_REMAP: Record<string, string> = {
+  ch: 'am',
+  chem: 'cm',
+  cmp: 'co',
+  eng: 'en',
+  bio: 'bi',
+  geo: 'ge',
+  hist: 'hi',
+  lit: 'li',
+  poa: 'pa',
+};
+
+/**
+ * Look up a topic by id, including legacy stub ids from before the SEAB catalogue merge.
+ * Returns undefined when the key is missing / unknown — callers must not assume a hit.
+ */
+export function resolveTopic(topicKey: string | null | undefined): Topic | undefined {
+  if (!topicKey) return undefined;
+  const direct = TOPICS[topicKey];
+  if (direct) return direct;
+
+  const aliased = LEGACY_TOPIC_ALIASES[topicKey];
+  if (aliased) {
+    const fromAlias = TOPICS[aliased];
+    if (fromAlias) return fromAlias;
+  }
+
+  const m = /^([a-z]+)(\d+)$/i.exec(topicKey.trim());
+  if (m) {
+    const rawPrefix = m[1].toLowerCase();
+    const prefix = LEGACY_PREFIX_REMAP[rawPrefix] ?? rawPrefix;
+    const padded = `${prefix}_${m[2].padStart(2, '0')}`;
+    const fromHeuristic = TOPICS[padded];
+    if (fromHeuristic) return fromHeuristic;
+  }
+
+  return undefined;
+}
+
+/**
+ * Title line for session / request cards: subject + chapter + title, or a safe fallback.
+ * Never throws on missing / stale topic keys.
+ */
+export function formatSessionTopicLine(
+  subject: string,
+  topicKey: string | null | undefined,
+): string {
+  const topic = resolveTopic(topicKey);
+  const subjectLabel = subject?.trim() || topic?.subject || 'Session';
+  if (topic) {
+    return `${subjectLabel} · Ch.${topic.spine} · ${topic.title}`;
+  }
+  const raw = topicKey?.trim();
+  if (raw) return `${subjectLabel} · ${raw}`;
+  return `${subjectLabel} · Topic`;
+}
+
 /** Chapter counts per curriculum subject key (for docs / PR summaries). */
 export function topicCountsBySubject(): Record<CurriculumSubjectKey, number> {
   const counts = {} as Record<CurriculumSubjectKey, number>;
