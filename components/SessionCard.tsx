@@ -1,10 +1,13 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useApp } from '@/context/AppContext';
+import { MeetHero } from '@/components/MeetHero';
 import { Card, BtnGhost } from '@/components/ui';
 import {
+  DUMMY_ADDRESS,
   durationLabel,
   formatSessionTopicLine,
   locationLabel,
+  resolveVideoJoinUrl,
   ScheduleSeed,
   TutorRequest,
 } from '@/constants/mockData';
@@ -51,7 +54,15 @@ export function SessionCard({ id, session }: { id: string; session: SessionLike 
           <Text style={styles.cancelLink}>Cancel</Text>
         </Pressable>
       </View>
-      <Text style={styles.title}>{titleLine}</Text>
+      {session.location === 'video' ? (
+        <MeetHero
+          mode="video"
+          url={resolveVideoJoinUrl('videoLink' in session ? session.videoLink : null)}
+        />
+      ) : (
+        <MeetHero mode="inperson" address={DUMMY_ADDRESS} />
+      )}
+      <Text style={[styles.title, styles.titleAfterHero]}>{titleLine}</Text>
       <Text style={styles.sub}>
         {session.name} · {session.time} · {durationLabel(session.mins)} ·{' '}
         {locationLabel(session.location)}
@@ -76,6 +87,7 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
   },
   title: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.text },
+  titleAfterHero: { marginTop: 14 },
   sub: { fontFamily: fonts.medium, fontSize: 12.5, color: colors.textDim, marginTop: 6 },
   warn: {
     fontFamily: fonts.bold,
