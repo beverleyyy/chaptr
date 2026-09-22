@@ -22,6 +22,10 @@ No `.env` needed. Press `i` / `a` or scan with Expo Go. Web: `npx expo start --w
 npx tsc --noEmit
 ```
 
+### iOS App Store
+
+Bundle id `sg.ping.app`, `eas.json` profiles, and the human steps (Apple Developer, `eas login`, production iOS build, TestFlight submit) are in [`docs/app-store-ios.md`](docs/app-store-ios.md). No Apple credentials belong in this repo or in CI.
+
 ## Supabase setup (real auth + data)
 
 1. Create a project at [supabase.com](https://supabase.com).
