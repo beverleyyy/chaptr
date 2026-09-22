@@ -490,7 +490,7 @@ export async function fetchTutorSessions(tutorId: string): Promise<{
     return { requests: {}, acceptedIds: [] };
   }
 
-  const rows = (data ?? []) as SessionWithRequest[];
+  const rows = (data ?? []) as unknown as SessionWithRequest[];
   const profiles = await fetchProfilesByIds(rows.map((r) => r.student_id));
 
   const requests: Record<string, TutorRequest> = {};
@@ -559,7 +559,7 @@ export async function fetchTutorEarnings(tutorId: string): Promise<{
     if (sErr) {
       console.warn('fetchTutorEarnings sessions', formatApiError(sErr));
     } else {
-      for (const raw of (sessions ?? []) as SessionWithRequest[]) {
+      for (const raw of (sessions ?? []) as unknown as SessionWithRequest[]) {
         sessionsById[raw.id] = raw;
         const req = requestFromSession(raw);
         if (req) requestBySessionId[raw.id] = req;
