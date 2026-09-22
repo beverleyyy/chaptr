@@ -7,13 +7,23 @@ import { colors, fonts } from '@/constants/theme';
 export default function RolePicker() {
   const router = useRouter();
   const { setRole, studentConsented, tutorConsented, usingBackend } = useApp();
-  const { configured, profile, signOut, session } = useAuth();
+  const { configured, profile, signOut, session, loading } = useAuth();
+
+  const needsSignIn = configured && !loading && !session;
 
   const goStudent = () => {
+    if (needsSignIn) {
+      router.replace('/auth/sign-in');
+      return;
+    }
     setRole('student');
     router.replace(studentConsented ? '/student/home' : '/student/consent');
   };
   const goTutor = () => {
+    if (needsSignIn) {
+      router.replace('/auth/sign-in');
+      return;
+    }
     setRole('tutor');
     router.replace(tutorConsented ? '/tutor/home' : '/tutor/consent');
   };
@@ -34,36 +44,63 @@ export default function RolePicker() {
         </Text>
       ) : (
         <Text style={styles.hint}>
-          {usingBackend ? 'Choose how to continue' : 'Choose a demo role to continue'}
+          {needsSignIn
+            ? 'Sign in to open student or tutor'
+            : usingBackend
+              ? 'Choose how to continue'
+              : 'Choose a demo role to continue'}
         </Text>
       )}
-      <View style={styles.switch}>
-        <Pressable
-          style={[styles.btn, (!lockedRole || lockedRole === 'student') && styles.active]}
-          onPress={goStudent}
-        >
-          <Text
-            style={
-              !lockedRole || lockedRole === 'student' ? styles.btnActiveText : styles.btnText
-            }
-          >
-            Student view
+
+      {needsSignIn ? (
+        <>
+          <Pressable style={styles.signInBtn} onPress={() => router.replace('/auth/sign-in')}>
+            <Text style={styles.signInBtnText}>Sign in</Text>
+          </Pressable>
+          <View style={[styles.switch, styles.switchDisabled]}>
+            <View style={[styles.btn, styles.btnDisabled]}>
+              <Text style={styles.btnText}>Student view</Text>
+            </View>
+            <View style={[styles.btn, styles.btnDisabled]}>
+              <Text style={styles.btnText}>Tutor view</Text>
+            </View>
+          </View>
+          <Text style={styles.note}>
+            Live mode needs an account. Sign in (or create one) before opening Student or Tutor.
           </Text>
-        </Pressable>
-        <Pressable
-          style={[styles.btn, lockedRole === 'tutor' && styles.active]}
-          onPress={goTutor}
-        >
-          <Text style={lockedRole === 'tutor' ? styles.btnActiveText : styles.btnText}>
-            Tutor view
+        </>
+      ) : (
+        <>
+          <View style={styles.switch}>
+            <Pressable
+              style={[styles.btn, (!lockedRole || lockedRole === 'student') && styles.active]}
+              onPress={goStudent}
+            >
+              <Text
+                style={
+                  !lockedRole || lockedRole === 'student' ? styles.btnActiveText : styles.btnText
+                }
+              >
+                Student view
+              </Text>
+            </Pressable>
+            <Pressable
+              style={[styles.btn, lockedRole === 'tutor' && styles.active]}
+              onPress={goTutor}
+            >
+              <Text style={lockedRole === 'tutor' ? styles.btnActiveText : styles.btnText}>
+                Tutor view
+              </Text>
+            </Pressable>
+          </View>
+          <Text style={styles.note}>
+            {configured
+              ? 'Connected to Supabase — requests & sessions sync when online. Payments remain mock.'
+              : 'Mock data only — set EXPO_PUBLIC_SUPABASE_* in .env for real auth & data.'}
           </Text>
-        </Pressable>
-      </View>
-      <Text style={styles.note}>
-        {configured
-          ? 'Connected to Supabase — requests & sessions sync when online. Payments remain mock.'
-          : 'Mock data only — set EXPO_PUBLIC_SUPABASE_* in .env for real auth & data.'}
-      </Text>
+        </>
+      )}
+
       {configured && session ? (
         <Pressable
           style={{ marginTop: 16 }}
@@ -111,6 +148,18 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
     textAlign: 'center',
   },
+  signInBtn: {
+    backgroundColor: colors.accent,
+    paddingVertical: 14,
+    paddingHorizontal: 36,
+    borderRadius: 14,
+    marginBottom: 18,
+  },
+  signInBtnText: {
+    fontFamily: fonts.bold,
+    fontSize: 15,
+    color: '#fff',
+  },
   switch: {
     flexDirection: 'row',
     backgroundColor: '#E4E7EB',
@@ -118,10 +167,16 @@ const styles = StyleSheet.create({
     padding: 4,
     gap: 6,
   },
+  switchDisabled: {
+    opacity: 0.45,
+  },
   btn: {
     paddingVertical: 12,
     paddingHorizontal: 26,
     borderRadius: 11,
+  },
+  btnDisabled: {
+    backgroundColor: 'transparent',
   },
   active: { backgroundColor: colors.accent },
   btnText: {
