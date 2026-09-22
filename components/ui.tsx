@@ -29,8 +29,8 @@ export function Screen({
             styles.glow,
             glow === 'left' ? { left: -90 } : { right: -90 },
             glow === 'left'
-              ? { backgroundColor: 'rgba(45,226,230,0.14)' }
-              : { backgroundColor: 'rgba(91,77,255,0.12)' },
+              ? { backgroundColor: 'rgba(43,108,255,0.10)' }
+              : { backgroundColor: 'rgba(43,108,255,0.14)' },
           ]}
         />
       )}
@@ -205,7 +205,7 @@ export function Toggle({
 }: {
   on: boolean;
   onToggle: () => void;
-  /** Fill when on — use `colors.live` for online status. */
+  /** Fill when on — use `colors.live` / `colors.accent` for online status. */
   activeColor?: string;
 }) {
   return (
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 18,
     borderBottomRightRadius: 18,
     borderBottomLeftRadius: 18,
-    shadowColor: '#0B1F3A',
+    shadowColor: '#0A2540',
     shadowOpacity: 0.06,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 2 },

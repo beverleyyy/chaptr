@@ -11,7 +11,7 @@ export default function TutorTabs() {
         tabBarInactiveTintColor: colors.textDim,
         tabBarLabelStyle: { fontFamily: fonts.semiBold, fontSize: 10.5 },
         tabBarStyle: {
-          backgroundColor: colors.cream,
+          backgroundColor: colors.ink2,
           borderTopColor: colors.hairline,
           height: 70,
           paddingBottom: 12,

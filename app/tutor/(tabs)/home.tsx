@@ -107,7 +107,12 @@ export default function TutorHome() {
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
           <View style={{ alignItems: 'flex-end', gap: 6, marginTop: 4 }}>
-            <Text style={[styles.onlineLabel, !tutorOnline && { color: colors.textDim }]}>
+            <Text
+              style={[
+                styles.onlineLabel,
+                tutorOnline ? styles.onlineLabelOn : styles.onlineLabelOff,
+              ]}
+            >
               {tutorOnline ? 'Online' : 'Offline'}
             </Text>
             <Toggle
@@ -282,7 +287,23 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
-  onlineLabel: { fontFamily: fonts.bold, fontSize: 11.5, color: colors.live },
+  onlineLabel: {
+    fontFamily: fonts.bold,
+    fontSize: 11.5,
+    overflow: 'hidden',
+  },
+  onlineLabelOn: {
+    color: colors.live,
+    backgroundColor: colors.liveSoft,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  onlineLabelOff: {
+    color: colors.textDim,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
   switchLink: { fontFamily: fonts.semiBold, fontSize: 12, color: colors.accent },
   centerCard: { padding: 18 },
   errorTitle: {
