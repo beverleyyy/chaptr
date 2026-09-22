@@ -69,7 +69,7 @@ export default function TutorProfile() {
             <Text style={styles.rateTitle}>Base rate</Text>
             <DimText style={{ fontSize: 11.5, marginTop: 2 }}>Set by Ping</DimText>
           </View>
-          <Text style={styles.rate}>$20/hr</Text>
+          <Text style={styles.rate}>$50/hr</Text>
         </Card>
 
         <View style={{ marginTop: 'auto' }}>
