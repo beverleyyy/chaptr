@@ -1,4 +1,4 @@
-# Chaptr
+# Ping
 
 Singapore tutoring marketplace — **Expo (React Native) + TypeScript + Expo Router**, with optional **Supabase** auth & Postgres.
 

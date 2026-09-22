@@ -109,7 +109,7 @@ Deno.serve(async (req: Request) => {
   params.append("payment_method_types[]", "paynow");
   params.set("payment_method_data[type]", "paynow");
   params.set("confirm", "true");
-  params.set("return_url", "chaptr://payment-return");
+  params.set("return_url", "ping://payment-return");
   params.set("metadata[student_id]", user.id);
   params.set("metadata[topic_key]", topicKey);
   params.set("metadata[subject]", subject);
