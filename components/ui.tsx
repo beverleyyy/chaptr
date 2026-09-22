@@ -109,10 +109,30 @@ export function Band({ label }: { label: string }) {
   );
 }
 
-export function Tag({ label, amber }: { label: string; amber?: boolean }) {
+export type TagTone = 'fresh' | 'aging' | 'urgent' | 'amber';
+
+const TAG_TONES: Record<TagTone, { fg: string; soft: string }> = {
+  fresh: { fg: colors.success, soft: colors.successSoft },
+  aging: { fg: colors.amber, soft: colors.amberSoft },
+  urgent: { fg: colors.danger, soft: colors.dangerSoft },
+  amber: { fg: colors.amber, soft: colors.amberSoft },
+};
+
+export function Tag({
+  label,
+  amber,
+  tone = amber ? 'amber' : undefined,
+}: {
+  label: string;
+  /** Prefer `tone`. Kept for back-compat with existing amber callers. */
+  amber?: boolean;
+  tone?: TagTone;
+}) {
+  const resolved: TagTone = tone ?? 'amber';
+  const palette = TAG_TONES[resolved];
   return (
-    <View style={[styles.tag, amber && styles.tagAmber]}>
-      <Text style={[styles.tagText, amber && styles.tagTextAmber]}>{label}</Text>
+    <View style={[styles.tag, { backgroundColor: palette.soft }]}>
+      <Text style={[styles.tagText, { color: palette.fg }]}>{label}</Text>
     </View>
   );
 }

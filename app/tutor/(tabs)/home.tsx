@@ -13,7 +13,7 @@ import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
 import { Screen, Card, Display, Tag, Avatar, Toggle, DimText, BtnGhost } from '@/components/ui';
 import { SessionCard } from '@/components/SessionCard';
-import { formatSeconds, TOPICS } from '@/constants/mockData';
+import { formatSeconds, TOPICS, waitToneColors, waitUrgency, type WaitUrgency } from '@/constants/mockData';
 import { colors, fonts } from '@/constants/theme';
 
 export default function TutorHome() {
@@ -72,21 +72,33 @@ export default function TutorHome() {
             : 'DEMO MODE — .env not loaded. Stop Expo, confirm .env exists, run: npx expo start -c'}
         </Text>
       </View>
-      {toastRequestId && requests[toastRequestId] ? (
-        <View style={styles.toast}>
-          <Avatar initials={requests[toastRequestId].initials} size={36} />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.toastLabel}>New request</Text>
-            <Text style={styles.toastText}>
-              {requests[toastRequestId].name} · {requests[toastRequestId].subject} Ch.
-              {TOPICS[requests[toastRequestId].topicKey]?.spine ?? '?'}
-            </Text>
+      {toastRequestId && requests[toastRequestId] ? (() => {
+        const toastReq = requests[toastRequestId];
+        const toastTone = waitToneColors(waitUrgency(toastReq.secondsWaiting));
+        return (
+          <View
+            style={[
+              styles.toast,
+              {
+                backgroundColor: toastTone.soft,
+                borderLeftColor: toastTone.fg,
+              },
+            ]}
+          >
+            <Avatar initials={toastReq.initials} size={36} />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.toastLabel, { color: toastTone.fg }]}>New request</Text>
+              <Text style={styles.toastText}>
+                {toastReq.name} · {toastReq.subject} Ch.
+                {TOPICS[toastReq.topicKey]?.spine ?? '?'}
+              </Text>
+            </View>
+            <Pressable style={styles.toastBtn} onPress={() => openRequest(toastRequestId)}>
+              <Text style={styles.toastBtnText}>View</Text>
+            </Pressable>
           </View>
-          <Pressable style={styles.toastBtn} onPress={() => openRequest(toastRequestId)}>
-            <Text style={styles.toastBtnText}>View</Text>
-          </Pressable>
-        </View>
-      ) : null}
+        );
+      })() : null}
 
       <View style={styles.header}>
         <View>
@@ -147,23 +159,46 @@ export default function TutorHome() {
         <>
             {pendingRequestIds.length > 0 ? (
               <>
-                <Text style={styles.reqHeading}>
-                  {pendingRequestIds.length === 1
-                    ? '1 new request'
-                    : `${pendingRequestIds.length} new requests`}
-                </Text>
+                {(() => {
+                  const rank: Record<WaitUrgency, number> = { fresh: 0, aging: 1, urgent: 2 };
+                  let worst: WaitUrgency | null = null;
+                  for (const pid of pendingRequestIds) {
+                    const req = requests[pid];
+                    if (!req) continue;
+                    const u = waitUrgency(req.secondsWaiting);
+                    if (!worst || rank[u] > rank[worst]) worst = u;
+                  }
+                  const headingColor = worst ? waitToneColors(worst).fg : colors.textDim;
+                  return (
+                    <Text style={[styles.reqHeading, { color: headingColor }]}>
+                      {pendingRequestIds.length === 1
+                        ? '1 new request'
+                        : `${pendingRequestIds.length} new requests`}
+                    </Text>
+                  );
+                })()}
                 {pendingRequestIds.map((id) => {
                   const r = requests[id];
                   if (!r) return null;
                   const t = TOPICS[r.topicKey];
+                  const urgency = waitUrgency(r.secondsWaiting);
+                  const tone = waitToneColors(urgency);
                   return (
                     <Pressable key={id} onPress={() => openRequest(id)}>
-                      <Card style={styles.reqCard}>
+                      <Card
+                        style={[
+                          styles.reqCard,
+                          {
+                            borderLeftColor: tone.fg,
+                            backgroundColor: tone.soft,
+                          },
+                        ]}
+                      >
                         <Avatar initials={r.initials} />
                         <View style={{ flex: 1 }}>
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                            <Text style={styles.newReq}>New request</Text>
-                            <Tag label={`Wait ${formatSeconds(r.secondsWaiting)}`} amber />
+                            <Text style={[styles.newReq, { color: tone.fg }]}>New request</Text>
+                            <Tag label={`Wait ${formatSeconds(r.secondsWaiting)}`} tone={urgency} />
                           </View>
                           <Text style={styles.reqLine}>
                             {r.name} · {r.subject} Ch.{t?.spine ?? '?'} · {r.time}

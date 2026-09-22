@@ -16,6 +16,7 @@ export const colors = {
   band: '#1D4ED8',
   bandSoft: '#EAF1FF',
   danger: '#E1483D',
+  dangerSoft: '#FCEDED',
   pageBg: '#EEF0F3',
   pageInk: '#14181C',
   star: '#F5A623',

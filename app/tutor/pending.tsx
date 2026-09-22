@@ -21,6 +21,8 @@ import {
   locationLabel,
   payoutFor,
   TOPICS,
+  waitToneColors,
+  waitUrgency,
 } from '@/constants/mockData';
 import { colors, fonts } from '@/constants/theme';
 
@@ -56,6 +58,8 @@ export default function TutorPending() {
   if (!r || !id) return null;
   const t = TOPICS[r.topicKey];
   const busy = acting || busyAction;
+  const urgency = waitUrgency(r.secondsWaiting);
+  const tone = waitToneColors(urgency);
 
   const onAccept = async () => {
     if (busy) return;
@@ -91,9 +95,9 @@ export default function TutorPending() {
     <Screen glow="left">
       <BackHeader
         title="New request"
-        titleStyle={{ color: colors.success }}
+        titleStyle={{ color: tone.fg }}
         onBack={() => router.back()}
-        right={<Tag label={`Wait ${formatSeconds(r.secondsWaiting)}`} amber />}
+        right={<Tag label={`Wait ${formatSeconds(r.secondsWaiting)}`} tone={urgency} />}
       />
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
         <Card style={{ padding: 16, gap: 12 }}>

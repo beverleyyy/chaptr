@@ -1,3 +1,5 @@
+import { colors } from '@/constants/theme';
+
 export type Topic = {
   id: string;
   spine: string;
@@ -196,6 +198,25 @@ export function formatSeconds(s: number): string {
   const d = Math.floor(s / 86400);
   const h = Math.floor((s % 86400) / 3600);
   return `${d}d ${h}h`;
+}
+
+export type WaitUrgency = 'fresh' | 'aging' | 'urgent';
+
+export function waitUrgency(secondsWaiting: number): WaitUrgency {
+  if (secondsWaiting < 5 * 60) return 'fresh';
+  if (secondsWaiting < 10 * 60) return 'aging';
+  return 'urgent';
+}
+
+export function waitToneColors(urgency: WaitUrgency): { fg: string; soft: string } {
+  switch (urgency) {
+    case 'fresh':
+      return { fg: colors.success, soft: colors.successSoft };
+    case 'aging':
+      return { fg: colors.amber, soft: colors.amberSoft };
+    case 'urgent':
+      return { fg: colors.danger, soft: colors.dangerSoft };
+  }
 }
 
 export function durationLabel(mins: number): string {
