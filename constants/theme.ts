@@ -11,6 +11,8 @@ export const colors = {
   accentInk: '#FFFFFF',
   amber: '#92720C',
   amberSoft: '#FBF3D3',
+  success: '#1B7A3D',
+  successSoft: '#E6F6EC',
   band: '#1D4ED8',
   bandSoft: '#EAF1FF',
   danger: '#E1483D',
