@@ -45,6 +45,7 @@ export default function StudentHome() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
+          style={styles.pillsScroll}
           contentContainerStyle={styles.pills}
         >
           {SUBJECTS.map((s) => (
@@ -110,7 +111,13 @@ export default function StudentHome() {
 const styles = StyleSheet.create({
   header: { paddingTop: 54, paddingHorizontal: 22, paddingBottom: 4 },
   switchLink: { fontFamily: fonts.semiBold, fontSize: 12, color: colors.accent },
-  pills: { paddingHorizontal: 22, paddingVertical: 18, gap: 8 },
+  pillsScroll: { flexGrow: 0 },
+  pills: {
+    paddingHorizontal: 22,
+    paddingVertical: 14,
+    gap: 8,
+    alignItems: 'center',
+  },
   pill: {
     paddingHorizontal: 15,
     paddingVertical: 8,
@@ -118,6 +125,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.hairline,
     backgroundColor: colors.ink3,
+    alignSelf: 'center',
   },
   pillActive: { backgroundColor: colors.accent, borderColor: 'transparent' },
   pillText: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.textDim },
