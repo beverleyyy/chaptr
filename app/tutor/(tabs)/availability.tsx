@@ -19,10 +19,19 @@ export default function TutorAvailability() {
       <View style={styles.header}>
         <Display style={{ fontSize: 22 }}>Availability</Display>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Text style={[styles.onlineLabel, !tutorOnline && { color: colors.textDim }]}>
+          <Text
+            style={[
+              styles.onlineLabel,
+              tutorOnline ? styles.onlineLabelOn : styles.onlineLabelOff,
+            ]}
+          >
             {tutorOnline ? 'Online' : 'Offline'}
           </Text>
-          <Toggle on={tutorOnline} onToggle={() => setTutorOnline(!tutorOnline)} />
+          <Toggle
+            on={tutorOnline}
+            onToggle={() => setTutorOnline(!tutorOnline)}
+            activeColor={colors.live}
+          />
         </View>
       </View>
 
@@ -74,7 +83,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  onlineLabel: { fontFamily: fonts.bold, fontSize: 11.5, color: colors.accent },
+  onlineLabel: {
+    fontFamily: fonts.bold,
+    fontSize: 11.5,
+    overflow: 'hidden',
+  },
+  onlineLabelOn: {
+    color: colors.live,
+    backgroundColor: colors.liveSoft,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  onlineLabelOff: {
+    color: colors.textDim,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
   chip: {
     paddingHorizontal: 14,
     paddingVertical: 9,
@@ -85,7 +110,7 @@ const styles = StyleSheet.create({
   },
   chipOn: { backgroundColor: colors.accent, borderColor: 'transparent' },
   chipText: { fontFamily: fonts.semiBold, fontSize: 12.5, color: colors.textDim },
-  chipTextOn: { color: '#fff' },
+  chipTextOn: { color: colors.accentInk },
   weekLabel: {
     fontFamily: fonts.bold,
     fontSize: 11,

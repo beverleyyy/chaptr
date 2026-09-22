@@ -192,7 +192,7 @@ export function mapRequestToUi(
     name,
     initials,
     band: insights.schoolYear ?? 'Sec Express',
-    continuity: 'Chaptr match',
+    continuity: 'Ping match',
     subject: row.subject,
     topicKey: row.topic_key,
     time: formatWhen(row.created_at),
@@ -490,7 +490,7 @@ export async function fetchTutorSessions(tutorId: string): Promise<{
     return { requests: {}, acceptedIds: [] };
   }
 
-  const rows = (data ?? []) as SessionWithRequest[];
+  const rows = (data ?? []) as unknown as SessionWithRequest[];
   const profiles = await fetchProfilesByIds(rows.map((r) => r.student_id));
 
   const requests: Record<string, TutorRequest> = {};
@@ -500,14 +500,15 @@ export async function fetchTutorSessions(tutorId: string): Promise<{
     const student = profiles[s.student_id];
     const name = student?.name ? abbreviatedName(student.name) : 'Student';
     const initials = student?.name ? initialsFromName(student.name) : 'ST';
+    const insights = insightsFromProfile(student);
     const id = s.request_id || s.id;
     const location = (req?.location ?? 'video') as LocationType;
     requests[id] = {
       id,
       name,
       initials,
-      band: 'Sec Express',
-      continuity: 'Chaptr match',
+      band: insights.schoolYear ?? 'Sec Express',
+      continuity: 'Ping match',
       subject: req?.subject ?? 'Session',
       topicKey: req?.topic_key ?? 'am_02',
       time: formatWhen(s.created_at),
@@ -558,7 +559,7 @@ export async function fetchTutorEarnings(tutorId: string): Promise<{
     if (sErr) {
       console.warn('fetchTutorEarnings sessions', formatApiError(sErr));
     } else {
-      for (const raw of (sessions ?? []) as SessionWithRequest[]) {
+      for (const raw of (sessions ?? []) as unknown as SessionWithRequest[]) {
         sessionsById[raw.id] = raw;
         const req = requestFromSession(raw);
         if (req) requestBySessionId[raw.id] = req;

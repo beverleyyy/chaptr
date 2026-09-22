@@ -133,8 +133,8 @@ PII is minimal (name + optional phone) for PDPA-minded Singapore use.
 
 ## Design tokens
 
-- Accent `#F2600C` / accent-dark `#B34500`
-- Page background `#EEF0F3`
+- Accent `#2B6CFF` / accent-dark `#1E54D6` (Ping super-blue)
+- Page background `#EEF4FF` (ice / cream alias)
 - Font: **Plus Jakarta Sans** via `@expo-google-fonts/plus-jakarta-sans`
 
 ## Stack

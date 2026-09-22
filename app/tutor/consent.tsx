@@ -10,7 +10,7 @@ const ITEMS = [
   {
     icon: 'people-outline' as const,
     title: 'The basics',
-    body: "You're an independent contractor, not a Chaptr employee — no CPF, and you set your own availability.",
+    body: "You're an independent contractor, not a Ping employee — no CPF, and you set your own availability.",
   },
   {
     icon: 'cash-outline' as const,
@@ -24,7 +24,7 @@ const ITEMS = [
   },
   {
     icon: 'book-outline' as const,
-    title: 'Stay on Chaptr',
+    title: 'Stay on Ping',
     body: "Keep using the app for students you're matched with here, rather than moving them off-platform.",
   },
 ];
@@ -39,7 +39,7 @@ export default function TutorConsent() {
       <View style={{ flex: 1 }}>
         <View style={styles.header}>
           <Display style={{ fontSize: 20 }}>Before you start tutoring</Display>
-          <DimText style={{ marginTop: 4 }}>The short version of the Chaptr Tutor Agreement.</DimText>
+          <DimText style={{ marginTop: 4 }}>The short version of the Ping Tutor Agreement.</DimText>
         </View>
         <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
           {ITEMS.map((item) => (
@@ -52,16 +52,16 @@ export default function TutorConsent() {
             </Card>
           ))}
           <Text style={styles.pdpa}>
-            This is a summary — the full Chaptr Tutor Agreement covers the complete terms.
+            This is a summary — the full Ping Tutor Agreement covers the complete terms.
           </Text>
         </ScrollView>
         <View style={styles.footer}>
           <Pressable style={styles.checkRow} onPress={() => setChecked((v) => !v)}>
             <View style={[styles.box, checked && styles.boxOn]}>
-              {checked && <Ionicons name="checkmark" size={14} color="#fff" />}
+              {checked && <Ionicons name="checkmark" size={14} color={colors.accentInk} />}
             </View>
             <Text style={styles.checkLabel}>
-              I&apos;ve read this and agree to the Chaptr Tutor Agreement.
+              I&apos;ve read this and agree to the Ping Tutor Agreement.
             </Text>
           </Pressable>
           <BtnPrimary

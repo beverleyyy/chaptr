@@ -49,9 +49,9 @@ export default function RolePicker() {
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.brand}>Chaptr</Text>
+      <Text style={styles.brand}>Ping</Text>
       <Text style={styles.sub}>
-        A student books a topic, gets matched, and pays — then a tutor accepts.
+        Just Ping a tutor — book a topic, get matched, and pay. A tutor accepts on demand.
       </Text>
       {configured && session ? (
         <Text style={styles.hint}>
@@ -145,13 +145,13 @@ const styles = StyleSheet.create({
   brand: {
     fontFamily: fonts.extraBold,
     fontSize: 28,
-    color: colors.accentDark,
+    color: colors.navy,
     marginBottom: 8,
   },
   sub: {
     fontFamily: fonts.medium,
     fontSize: 14,
-    color: '#767B84',
+    color: colors.textDim,
     textAlign: 'center',
     lineHeight: 21,
     maxWidth: 320,
@@ -176,11 +176,11 @@ const styles = StyleSheet.create({
   signInBtnText: {
     fontFamily: fonts.bold,
     fontSize: 15,
-    color: '#fff',
+    color: colors.accentInk,
   },
   switch: {
     flexDirection: 'row',
-    backgroundColor: '#E4E7EB',
+    backgroundColor: colors.ink3,
     borderRadius: 14,
     padding: 4,
     gap: 6,
@@ -200,18 +200,18 @@ const styles = StyleSheet.create({
   btnText: {
     fontFamily: fonts.bold,
     fontSize: 14,
-    color: '#5B5F66',
+    color: colors.textDim,
   },
   btnActiveText: {
     fontFamily: fonts.bold,
     fontSize: 14,
-    color: '#fff',
+    color: colors.accentInk,
   },
   note: {
     marginTop: 24,
     fontFamily: fonts.medium,
     fontSize: 12,
-    color: '#767B84',
+    color: colors.textDim,
     textAlign: 'center',
     maxWidth: 340,
     lineHeight: 18,

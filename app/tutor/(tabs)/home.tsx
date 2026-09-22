@@ -107,10 +107,19 @@ export default function TutorHome() {
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
           <View style={{ alignItems: 'flex-end', gap: 6, marginTop: 4 }}>
-            <Text style={[styles.onlineLabel, !tutorOnline && { color: colors.textDim }]}>
+            <Text
+              style={[
+                styles.onlineLabel,
+                tutorOnline ? styles.onlineLabelOn : styles.onlineLabelOff,
+              ]}
+            >
               {tutorOnline ? 'Online' : 'Offline'}
             </Text>
-            <Toggle on={tutorOnline} onToggle={() => setTutorOnline(!tutorOnline)} />
+            <Toggle
+              on={tutorOnline}
+              onToggle={() => setTutorOnline(!tutorOnline)}
+              activeColor={colors.live}
+            />
           </View>
           <Pressable onPress={() => router.push('/tutor/profile')} style={{ marginTop: 3 }}>
             <Ionicons name="settings-outline" size={22} color={colors.textDim} />
@@ -260,7 +269,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 10,
-    backgroundColor: '#FFF0E6',
+    backgroundColor: colors.accentSoft,
     borderWidth: 1,
     borderColor: colors.accent,
   },
@@ -278,7 +287,23 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
-  onlineLabel: { fontFamily: fonts.bold, fontSize: 11.5, color: colors.accent },
+  onlineLabel: {
+    fontFamily: fonts.bold,
+    fontSize: 11.5,
+    overflow: 'hidden',
+  },
+  onlineLabelOn: {
+    color: colors.live,
+    backgroundColor: colors.liveSoft,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  onlineLabelOff: {
+    color: colors.textDim,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
   switchLink: { fontFamily: fonts.semiBold, fontSize: 12, color: colors.accent },
   centerCard: { padding: 18 },
   errorTitle: {
@@ -355,5 +380,5 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 14,
   },
-  toastBtnText: { fontFamily: fonts.bold, fontSize: 12, color: '#fff' },
+  toastBtnText: { fontFamily: fonts.bold, fontSize: 12, color: colors.accentInk },
 });

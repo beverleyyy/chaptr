@@ -53,7 +53,7 @@ export default function SignIn() {
         >
           <Display style={{ fontSize: 26 }}>Welcome back</Display>
           <DimText style={{ marginTop: 6, marginBottom: 22 }}>
-            Sign in with your Chaptr email and password.
+            Sign in with your Ping email and password.
           </DimText>
 
           <Text style={styles.label}>Email</Text>

@@ -113,7 +113,7 @@ export default function BookSession() {
                   key: 'inperson' as const,
                   icon: 'location-outline' as const,
                   label: 'In person',
-                  sub: 'At a Chaptr venue',
+                  sub: 'At a Ping venue',
                 },
                 {
                   key: 'video' as const,
@@ -130,9 +130,9 @@ export default function BookSession() {
                   onPress={() => setBooking({ location: opt.key })}
                   style={[styles.locOpt, sel && styles.locOptSel]}
                 >
-                  <Ionicons name={opt.icon} size={18} color={sel ? '#fff' : colors.text} />
-                  <Text style={[styles.locLabel, sel && { color: '#fff' }]}>{opt.label}</Text>
-                  <Text style={[styles.locSub, sel && { color: '#fff', opacity: 0.85 }]}>{opt.sub}</Text>
+                  <Ionicons name={opt.icon} size={18} color={sel ? colors.accentInk : colors.text} />
+                  <Text style={[styles.locLabel, sel && { color: colors.accentInk }]}>{opt.label}</Text>
+                  <Text style={[styles.locSub, sel && { color: colors.accentInk, opacity: 0.85 }]}>{opt.sub}</Text>
                 </Pressable>
               );
             })}
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   durPillSel: { backgroundColor: colors.accent, borderColor: colors.accent },
   durLabel: { fontFamily: fonts.bold, fontSize: 14, color: colors.text },
   durPrice: { fontFamily: fonts.medium, fontSize: 11.5, color: colors.textDim },
-  durSelText: { color: '#fff' },
+  durSelText: { color: colors.accentInk },
   locRow: { flexDirection: 'row', gap: 8 },
   locOpt: {
     flex: 1,
