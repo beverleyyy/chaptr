@@ -154,3 +154,11 @@ $$;
 grant execute on function public.create_my_tutoring_request(
   text, text, integer, numeric, text, text, text, text, text
 ) to authenticated;
+
+revoke execute on function public.create_my_tutoring_request(
+  text, text, integer, numeric, text, text, text, text, text
+) from anon, public;
+
+grant execute on function public.create_my_tutoring_request(
+  text, text, integer, numeric, text, text, text, text, text
+) to authenticated;
