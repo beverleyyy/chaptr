@@ -24,10 +24,11 @@ export default function Splash() {
   return (
     <View style={styles.wrap}>
       <View style={styles.iconBox}>
-        <Ionicons name="book-outline" size={34} color="#fff" />
+        <Ionicons name="flash-outline" size={34} color={colors.accentInk} />
       </View>
-      <Text style={styles.title}>Chaptr</Text>
-      {loading ? <ActivityIndicator color="#fff" style={{ marginTop: 16 }} /> : null}
+      <Text style={styles.title}>Ping</Text>
+      <Text style={styles.tagline}>Just Ping a tutor.</Text>
+      {loading ? <ActivityIndicator color={colors.accent} style={{ marginTop: 16 }} /> : null}
     </View>
   );
 }
@@ -35,23 +36,29 @@ export default function Splash() {
 const styles = StyleSheet.create({
   wrap: {
     flex: 1,
-    backgroundColor: colors.accent,
+    backgroundColor: colors.ink,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 16,
+    gap: 12,
   },
   iconBox: {
     width: 72,
     height: 72,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.16)',
+    backgroundColor: colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 4,
   },
   title: {
     fontFamily: fonts.extraBold,
     fontSize: 30,
-    color: '#fff',
+    color: colors.navy,
     letterSpacing: -0.3,
+  },
+  tagline: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.textDim,
   },
 });

@@ -295,7 +295,7 @@ export default function Payment() {
           <Text style={styles.payTitle}>
             {stripeLive ? 'PayNow · Stripe test' : 'PayNow · UEN 202601234A'}
           </Text>
-          <DimText style={{ marginTop: 2 }}>Chaptr Tutor Sessions</DimText>
+          <DimText style={{ marginTop: 2 }}>Ping Tutor Sessions</DimText>
           {hostedUrl ? (
             <Pressable
               onPress={() => void Linking.openURL(hostedUrl)}
@@ -317,7 +317,7 @@ export default function Payment() {
                   ? 'Payment received — creating your tutoring request…'
                   : phase === 'canceled' || phase === 'failed'
                     ? errorText || 'Payment did not complete.'
-                    : 'Authorize on the Stripe test page, then return to this Chaptr screen — the Stripe page will not open matching. We detect payment here (and when you come back to the app).'
+                    : 'Authorize on the Stripe test page, then return to this Ping screen — the Stripe page will not open matching. We detect payment here (and when you come back to the app).'
               : usingBackend
                 ? "Scan with your banking app, then confirm below once you've paid. Confirming creates a live tutoring request for tutors."
                 : "Scan with your banking app, then confirm below once you've paid. (Mock payment — no money moves.)"}

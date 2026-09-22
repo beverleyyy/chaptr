@@ -1,25 +1,42 @@
+/** Ping brand palette — cohesive light super-blue (focus / learning). */
 export const colors = {
-  ink: '#FFFFFF',
+  // Surfaces (semantic: ink = page, ink2 = card, ink3 = soft blue chip)
+  ink: '#EEF4FF',
   ink2: '#FFFFFF',
-  ink3: '#F1F2F5',
-  hairline: '#E7E9ED',
-  text: '#14181C',
-  textDim: '#6D7178',
-  accent: '#F2600C',
-  accentDark: '#B34500',
-  accentSoft: '#FFF0E6',
+  ink3: '#DBE8FF',
+  hairline: '#D7E3F8',
+
+  // Type
+  text: '#0A2540',
+  textDim: '#64748B',
+
+  // Brand anchors (blue family only)
+  navy: '#0A2540',
+  /** Ice page — kept as alias so older `cream` callers stay on-system. */
+  cream: '#EEF4FF',
+  /** Online / live — same primary blue (not cyan). */
+  live: '#2B6CFF',
+  liveSoft: '#DBE8FF',
+
+  // Primary CTA — strong blue (white label)
+  accent: '#2B6CFF',
+  accentDark: '#1E54D6',
+  accentSoft: '#DBE8FF',
   accentInk: '#FFFFFF',
-  amber: '#92720C',
+
+  // Wait-time aging only (green → amber → red) — status, not brand
+  amber: '#C4850A',
   amberSoft: '#FBF3D3',
   success: '#1B7A3D',
   successSoft: '#E6F6EC',
-  band: '#1D4ED8',
-  bandSoft: '#EAF1FF',
+  band: '#2B6CFF',
+  bandSoft: '#DBE8FF',
   danger: '#E1483D',
   dangerSoft: '#FCEDED',
-  pageBg: '#EEF0F3',
-  pageInk: '#14181C',
-  star: '#F5A623',
+
+  pageBg: '#EEF4FF',
+  pageInk: '#0A2540',
+  star: '#2B6CFF',
 } as const;
 
 export const spacing = {

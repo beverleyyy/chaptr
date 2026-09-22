@@ -67,7 +67,7 @@ export default function TutorProfile() {
         <Card style={styles.rateCard}>
           <View>
             <Text style={styles.rateTitle}>Base rate</Text>
-            <DimText style={{ fontSize: 11.5, marginTop: 2 }}>Set by Chaptr</DimText>
+            <DimText style={{ fontSize: 11.5, marginTop: 2 }}>Set by Ping</DimText>
           </View>
           <Text style={styles.rate}>$20/hr</Text>
         </Card>
@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
   },
   chipOn: { backgroundColor: colors.accent, borderColor: 'transparent' },
   chipText: { fontFamily: fonts.semiBold, fontSize: 12.5, color: colors.textDim },
-  chipTextOn: { color: '#fff' },
+  chipTextOn: { color: colors.accentInk },
   rateCard: {
     padding: 16,
     flexDirection: 'row',

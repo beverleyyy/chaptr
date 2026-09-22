@@ -135,7 +135,7 @@ export default function StudentCurriculumScreen() {
                 >
                   <View style={[styles.check, selected && styles.checkOn]}>
                     {selected ? (
-                      <Ionicons name="checkmark" size={13} color="#fff" />
+                      <Ionicons name="checkmark" size={13} color={colors.accentInk} />
                     ) : null}
                   </View>
                   <View style={{ flex: 1 }}>
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
   },
   levelChipOn: { backgroundColor: colors.accent, borderColor: colors.accent },
   levelText: { fontFamily: fonts.bold, fontSize: 13, color: colors.text },
-  levelTextOn: { color: '#fff' },
+  levelTextOn: { color: colors.accentInk },
   footer: {
     paddingHorizontal: 22,
     paddingTop: 8,

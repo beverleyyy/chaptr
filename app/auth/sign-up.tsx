@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
   },
   switch: {
     flexDirection: 'row',
-    backgroundColor: '#E4E7EB',
+    backgroundColor: colors.ink3,
     borderRadius: 14,
     padding: 4,
     gap: 6,
@@ -199,12 +199,12 @@ const styles = StyleSheet.create({
   btnText: {
     fontFamily: fonts.bold,
     fontSize: 14,
-    color: '#5B5F66',
+    color: colors.textDim,
   },
   btnActiveText: {
     fontFamily: fonts.bold,
     fontSize: 14,
-    color: '#fff',
+    color: colors.accentInk,
   },
   error: {
     marginTop: 12,

@@ -9,7 +9,7 @@ export default function NotFoundScreen() {
       <View style={styles.container}>
         <Text style={styles.title}>Screen not found</Text>
         <Link href="/" style={styles.link}>
-          <Text style={styles.linkText}>Back to Chaptr</Text>
+          <Text style={styles.linkText}>Back to Ping</Text>
         </Link>
       </View>
     </>
