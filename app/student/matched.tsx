@@ -1,21 +1,21 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { ScrollView, View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   Screen,
   Card,
-  Display,
   StyleChip,
   Avatar,
   CheckCircle,
   BtnGhost,
   DimText,
 } from '@/components/ui';
+import { MeetHero } from '@/components/MeetHero';
 import { useApp } from '@/context/AppContext';
 import {
   DUMMY_ADDRESS,
-  DUMMY_ZOOM,
   durationLabel,
   resolveTopic,
+  resolveVideoJoinUrl,
 } from '@/constants/mockData';
 import { colors, fonts } from '@/constants/theme';
 
@@ -28,23 +28,28 @@ export default function Matched() {
     topic?.title ??
     ((matchedTutor?.topicKey || booking.topicId || '').trim() || 'Topic');
   const isVideo = (matchedTutor?.location ?? booking.location) === 'video';
-  const tutorName = matchedTutor?.name ?? 'Mr. Rajan';
-  const tutorInitials = matchedTutor?.initials ?? 'MR';
+  const rawTutorName = matchedTutor?.name ?? 'Mr. Rajan';
+  const tutorName = rawTutorName === 'Chaptr Tutor' ? 'Ping Tutor' : rawTutorName;
+  const tutorInitials =
+    rawTutorName === 'Chaptr Tutor' ? 'PT' : (matchedTutor?.initials ?? 'MR');
   const whenLabel = matchedTutor?.scheduledLabel ?? 'Today, 7:30pm';
   const mins = matchedTutor?.mins ?? booking.mins;
 
   return (
     <Screen>
-      <View style={styles.body}>
-        <CheckCircle />
-        <Display style={{ fontSize: 21, textAlign: 'center' }}>Congrats, you&apos;re matched!</Display>
-        <DimText style={{ marginTop: 8, textAlign: 'center', lineHeight: 20 }}>
-          {isVideo ? 'Join your session at' : 'Please meet at'}
-          {'\n'}
-          <Text style={{ color: colors.text, fontFamily: fonts.semiBold }}>
-            {isVideo ? DUMMY_ZOOM : DUMMY_ADDRESS}
-          </Text>
-        </DimText>
+      <ScrollView
+        style={{ flex: 1, width: '100%' }}
+        contentContainerStyle={styles.body}
+        showsVerticalScrollIndicator={false}
+      >
+        <CheckCircle size={36} />
+        <Text style={styles.kicker}>Congrats, you&apos;re matched!</Text>
+
+        {isVideo ? (
+          <MeetHero mode="video" url={resolveVideoJoinUrl(matchedTutor?.videoLink)} />
+        ) : (
+          <MeetHero mode="inperson" address={DUMMY_ADDRESS} />
+        )}
 
         <Card style={styles.tutorCard}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -81,18 +86,25 @@ export default function Matched() {
           style={{ width: '100%', marginTop: 'auto' }}
           onPress={() => router.replace('/student/home')}
         />
-      </View>
+      </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   body: {
-    flex: 1,
-    paddingTop: 60,
-    paddingHorizontal: 24,
+    flexGrow: 1,
+    paddingTop: 36,
+    paddingHorizontal: 20,
     paddingBottom: 24,
     alignItems: 'center',
+  },
+  kicker: {
+    fontFamily: fonts.semiBold,
+    fontSize: 16,
+    lineHeight: 22,
+    color: colors.textDim,
+    textAlign: 'center',
   },
   tutorCard: { width: '100%', padding: 16, marginTop: 18 },
   name: { fontFamily: fonts.semiBold, fontSize: 15, color: colors.text },

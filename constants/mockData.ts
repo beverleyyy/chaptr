@@ -30,6 +30,8 @@ export type TutorRequest = {
   expiresAt?: string | null;
   /** Optional student insight blurb for tutor pending/accept. */
   tutorInsight?: string | null;
+  /** Live sessions.video_link when this row came from an accepted session. */
+  videoLink?: string | null;
 };
 
 export type ScheduleSeed = {
@@ -276,6 +278,27 @@ export const HANDOFF_NOTE =
 export const DUMMY_ADDRESS = 'Ping Study Hub · 2 Science Drive 2, #01-08';
 export const DUMMY_ADDRESS_PLAIN = 'Ping Study Hub, 2 Science Drive 2, #01-08';
 export const DUMMY_ZOOM = 'zoom.us/j/88234015671';
+
+/** Prefer a live session video link; demo confirm screens fall back to the sample Zoom room. */
+export function resolveVideoJoinUrl(live?: string | null): string {
+  const trimmed = live?.trim();
+  return trimmed ? trimmed : DUMMY_ZOOM;
+}
+
+/** Ensure Linking.openURL gets a scheme. Dummy Zoom is stored without https://. */
+export function openableUrl(raw: string): string {
+  const trimmed = raw.trim();
+  if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) return trimmed;
+  return `https://${trimmed.replace(/^\/+/, '')}`;
+}
+
+export function displayJoinTarget(raw: string): string {
+  return raw.trim().replace(/^https?:\/\//i, '');
+}
+
+export function videoJoinLabel(raw: string): string {
+  return /zoom\./i.test(raw) ? 'Join Zoom session' : 'Join video call';
+}
 
 export const AVAILABILITY_DAYS = [
   { key: 'mon', label: 'Monday', sub: 'evenings', on: true },

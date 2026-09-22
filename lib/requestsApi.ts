@@ -47,6 +47,8 @@ export type MatchedTutorInfo = {
   mins: number;
   location: LocationType;
   scheduledLabel: string | null;
+  /** sessions.video_link — null for in-person. */
+  videoLink: string | null;
 };
 
 function secondsUntil(iso: string): number {
@@ -301,6 +303,7 @@ export function toMatchedTutorInfo(match: AcceptedMatch): MatchedTutorInfo {
     mins: match.request.mins,
     location: match.request.location,
     scheduledLabel: formatWhen(match.session.created_at),
+    videoLink: match.session.video_link,
   };
 }
 
@@ -518,6 +521,7 @@ export async function fetchTutorSessions(tutorId: string): Promise<{
       note: req?.note ?? null,
       timer: '',
       secondsWaiting: 0,
+      videoLink: s.video_link,
     };
     acceptedIds.push(id);
   }
