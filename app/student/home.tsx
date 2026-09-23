@@ -238,7 +238,14 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   listHint: { fontFamily: fonts.medium, fontSize: 11.5, color: colors.textDim },
-  topicRow: { flexDirection: 'row', paddingVertical: 16, paddingRight: 16, paddingLeft: 0, gap: 0 },
+  topicRow: {
+    flexDirection: 'row',
+    paddingTop: 24,
+    paddingBottom: 16,
+    paddingRight: 16,
+    paddingLeft: 16,
+    gap: 0,
+  },
   topicTitle: { fontFamily: fonts.semiBold, fontSize: 15, color: colors.text, lineHeight: 20 },
   bottomNav: {
     flexDirection: 'row',

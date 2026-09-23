@@ -165,7 +165,13 @@ export default function BookSession() {
 
 const styles = StyleSheet.create({
   body: { paddingHorizontal: 22, paddingBottom: 24, gap: 18, flexGrow: 1 },
-  topicCard: { flexDirection: 'row', paddingVertical: 16, paddingRight: 16, paddingLeft: 0 },
+  topicCard: {
+    flexDirection: 'row',
+    paddingTop: 24,
+    paddingBottom: 16,
+    paddingRight: 16,
+    paddingLeft: 16,
+  },
   topicTitle: { fontFamily: fonts.semiBold, fontSize: 15, color: colors.text, lineHeight: 20 },
   durRow: { flexDirection: 'row', gap: 8 },
   durPill: {
