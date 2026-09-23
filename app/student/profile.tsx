@@ -54,6 +54,7 @@ import {
   Tag,
 } from '@/components/ui';
 import { colors, fonts } from '@/constants/theme';
+import { goBackOrReplace } from '@/lib/navigation';
 
 function initialsFromName(name: string | null | undefined): string {
   const parts = (name ?? '').trim().split(/\s+/).filter(Boolean);
@@ -254,7 +255,10 @@ export default function StudentProfile() {
 
   return (
     <Screen>
-      <BackHeader title="Your profile" onBack={() => router.back()} />
+      <BackHeader
+        title="Your profile"
+        onBack={() => goBackOrReplace(router, '/student/home')}
+      />
       <ScrollView
         contentContainerStyle={styles.body}
         showsVerticalScrollIndicator={false}

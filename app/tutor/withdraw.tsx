@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '@/context/AppContext';
 import { Screen, Card, Display, BackHeader, BtnPrimary, DimText } from '@/components/ui';
 import { colors, fonts } from '@/constants/theme';
+import { goBackOrReplace } from '@/lib/navigation';
 
 export default function Withdraw() {
   const router = useRouter();
@@ -24,7 +25,10 @@ export default function Withdraw() {
 
   return (
     <Screen glow="left">
-      <BackHeader title="Withdraw earnings" onBack={() => router.back()} />
+      <BackHeader
+        title="Withdraw earnings"
+        onBack={() => goBackOrReplace(router, '/tutor/earnings')}
+      />
       <View style={styles.body}>
         <View style={{ alignItems: 'center' }}>
           <DimText>Amount to withdraw</DimText>

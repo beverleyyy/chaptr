@@ -25,6 +25,7 @@ import {
   waitUrgency,
 } from '@/constants/mockData';
 import { colors, fonts } from '@/constants/theme';
+import { goBackOrReplace } from '@/lib/navigation';
 
 export default function TutorPending() {
   const router = useRouter();
@@ -96,7 +97,7 @@ export default function TutorPending() {
       <BackHeader
         title="New request"
         titleStyle={{ color: tone.fg }}
-        onBack={() => router.back()}
+        onBack={() => goBackOrReplace(router, '/tutor/home')}
         right={<Tag label={`Wait ${formatSeconds(r.secondsWaiting)}`} tone={urgency} />}
       />
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>

@@ -20,6 +20,7 @@ import {
   resolveTopic,
 } from '@/constants/mockData';
 import { colors, fonts } from '@/constants/theme';
+import { goBackOrReplace } from '@/lib/navigation';
 import {
   fetchAcceptedMatch,
   toMatchedTutorInfo,
@@ -109,7 +110,10 @@ export default function Matching() {
 
   return (
     <Screen>
-      <BackHeader title="Finding your tutor" onBack={() => router.back()} />
+      <BackHeader
+        title="Finding your tutor"
+        onBack={() => goBackOrReplace(router, '/student/home')}
+      />
       <View style={styles.body}>
         <Card style={styles.topicCard}>
           <Spine label={topic?.spine ?? '?'} accent />

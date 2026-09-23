@@ -12,6 +12,7 @@ import {
   DimText,
 } from '@/components/ui';
 import { colors, fonts } from '@/constants/theme';
+import { goBackOrReplace } from '@/lib/navigation';
 
 export default function TutorProfile() {
   const router = useRouter();
@@ -20,7 +21,10 @@ export default function TutorProfile() {
 
   return (
     <Screen glow="left">
-      <BackHeader title="Your profile" onBack={() => router.back()} />
+      <BackHeader
+        title="Your profile"
+        onBack={() => goBackOrReplace(router, '/tutor/home')}
+      />
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
           <Avatar initials="MR" size={56} />
