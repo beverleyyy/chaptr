@@ -17,6 +17,7 @@ import { Screen, Card, Display, BackHeader, BtnPrimary, DimText } from '@/compon
 import { HANDOFF_NOTE, resolveTopic } from '@/constants/mockData';
 import { colors, fonts } from '@/constants/theme';
 import { PayNowQR } from '@/components/PayNowQR';
+import { goBackOrReplace } from '@/lib/navigation';
 import { formatApiError } from '@/lib/requestsApi';
 import {
   createPaynowPayment,
@@ -260,7 +261,7 @@ export default function Payment() {
 
   return (
     <Screen>
-      <BackHeader title="Scan to pay" onBack={() => router.back()} />
+      <BackHeader title="Scan to pay" onBack={() => goBackOrReplace(router, '/student/home')} />
       <Text
         style={{
           marginHorizontal: 22,

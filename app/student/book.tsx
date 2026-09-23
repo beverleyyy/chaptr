@@ -18,6 +18,7 @@ import {
 import { levelForSubject } from '@/lib/curriculumApi';
 import { DURATIONS, HANDOFF_NOTE, resolveTopic } from '@/constants/mockData';
 import { colors, fonts } from '@/constants/theme';
+import { goBackOrReplace } from '@/lib/navigation';
 
 export default function BookSession() {
   const {
@@ -69,7 +70,10 @@ export default function BookSession() {
 
   return (
     <Screen>
-      <BackHeader title="Book a session" onBack={() => router.back()} />
+      <BackHeader
+        title="Book a session"
+        onBack={() => goBackOrReplace(router, '/student/home')}
+      />
       <ScrollView
         contentContainerStyle={styles.body}
         showsVerticalScrollIndicator={false}

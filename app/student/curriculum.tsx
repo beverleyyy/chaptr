@@ -19,6 +19,7 @@ import {
 } from '@/constants/curriculum';
 import { Screen, Display, BtnPrimary, DimText, Card } from '@/components/ui';
 import { colors, fonts } from '@/constants/theme';
+import { goBackOrReplace } from '@/lib/navigation';
 
 type DraftMap = Partial<Record<CurriculumSubjectKey, SubjectLevel | null>>;
 
@@ -102,7 +103,11 @@ export default function StudentCurriculumScreen() {
       <View style={{ flex: 1 }}>
         <View style={styles.header}>
           {curriculumReady ? (
-            <Pressable onPress={() => router.back()} style={styles.backRow} hitSlop={8}>
+            <Pressable
+              onPress={() => goBackOrReplace(router, '/student/home')}
+              style={styles.backRow}
+              hitSlop={8}
+            >
               <Ionicons name="chevron-back" size={18} color={colors.accent} />
               <Text style={styles.backText}>Back</Text>
             </Pressable>
