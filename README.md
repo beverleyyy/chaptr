@@ -26,6 +26,10 @@ npx tsc --noEmit
 
 Bundle id `sg.ping.app`, `eas.json` profiles, and the human steps (Apple Developer, `eas login`, production iOS build, TestFlight submit) are in [`docs/app-store-ios.md`](docs/app-store-ios.md). No Apple credentials belong in this repo or in CI.
 
+### Web (Vercel)
+
+Static export (`npm run export:web` → `dist`) and the GitHub → Vercel steps are in [`docs/web-deploy-vercel.md`](docs/web-deploy-vercel.md). Public env names only; no secret values in the repo.
+
 ## Supabase setup (real auth + data)
 
 1. Create a project at [supabase.com](https://supabase.com).
