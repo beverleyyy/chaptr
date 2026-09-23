@@ -16,6 +16,9 @@ import { colors } from '@/constants/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
+/** Native splash only. Web has no splash overlay, so this must not gate the tree. */
+const FONT_SPLASH_TIMEOUT_MS = 2500;
+
 function RootStack() {
   return (
     <>
@@ -38,7 +41,7 @@ function RootStack() {
 }
 
 export default function RootLayout() {
-  const [loaded] = useFonts({
+  const [loaded, error] = useFonts({
     PlusJakartaSans_400Regular,
     PlusJakartaSans_500Medium,
     PlusJakartaSans_600SemiBold,
@@ -47,10 +50,19 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (loaded) SplashScreen.hideAsync().catch(() => {});
-  }, [loaded]);
-
-  if (!loaded) return null;
+    if (loaded || error) {
+      SplashScreen.hideAsync().catch(() => {});
+      return;
+    }
+    // FontFaceObserver rejects after 12s on web when the file 404s or never
+    // paints, and `loaded` stays false. Hide the native splash anyway so a
+    // slow or failed font cannot leave a blank screen. The tree below renders
+    // either way and falls back to the platform font.
+    const timer = setTimeout(() => {
+      SplashScreen.hideAsync().catch(() => {});
+    }, FONT_SPLASH_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [loaded, error]);
 
   return (
     <AuthProvider>

@@ -2,7 +2,22 @@
 
 Ping’s web build is an Expo Router **static** export (`expo.web.output` is `"static"` in `app.json`). Expo SDK 57 writes that export to **`dist`** when you run `expo export -p web`.
 
-`vercel.json` tells Vercel to run that export and publish `dist`. `cleanUrls` serves paths such as `/student/profile` from the matching HTML file when static export generated one. The rewrite sends any path that has no file to `/` (which serves `index.html`), so a refresh on a client route does not 404. That is the [Expo SDK 57 Vercel pattern](https://docs.expo.dev/versions/v57.0.0/guides/publishing-websites/).
+`vercel.json` tells Vercel to run that export and publish `dist`.
+
+This app uses static rendering (`web.output: "static"`), so Expo writes one HTML file per route (`index.html`, `role.html`, `auth/sign-in.html`, `student/home.html`, …). The [Expo SDK 57 publishing guide](https://docs.expo.dev/versions/v57.0.0/guides/publishing-websites/) shows a single-page `vercel.json` (`cleanUrls: true` plus a rewrite of every path to `/`). That snippet is for `web.output: "single"`. On this static export it 404s the site root:
+
+- `cleanUrls` publishes `index.html` at the clean path `/index`, then redirects `/index` and `/index.html` to `/`. `/` itself has no file, so `/` and `/index.html` 404. Other pages such as `/role` still work.
+- A catch-all rewrite to `/` then has nowhere to land, so `/` stays broken.
+
+`vercel.json` therefore does not set `cleanUrls`. Vercel serves real files first, which is what makes `/` and `/index.html` return `index.html` (200). `trailingSlash: false` redirects `/role/` to `/role`. The rewrite runs only after the filesystem misses, and only for extensionless paths, sending them to the matching export:
+
+| Request | Result |
+| --- | --- |
+| `/`, `/index.html` | `index.html` (filesystem) |
+| `/role`, `/auth/sign-in`, `/student/home` | `role.html`, `auth/sign-in.html`, `student/home.html` |
+| `/_expo/static/…` and other hashed assets | the file itself |
+
+Paths with a dot (JS, CSS, fonts, images) are not rewritten. Unknown extensionless paths 404 when no matching `.html` file was exported.
 
 ## Connect GitHub and deploy
 
