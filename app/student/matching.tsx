@@ -19,6 +19,7 @@ import {
   locationLabel,
   resolveTopic,
 } from '@/constants/mockData';
+import { demoMatchedTutor } from '@/constants/demoData';
 import { colors, fonts } from '@/constants/theme';
 import { goBackOrReplace } from '@/lib/navigation';
 import {
@@ -34,6 +35,7 @@ export default function Matching() {
   const {
     booking,
     usingBackend,
+    demoMode,
     liveRequestId,
     setMatchedTutor,
   } = useApp();
@@ -42,12 +44,33 @@ export default function Matching() {
   const [status, setStatus] = useState<WaitStatus>('searching');
   const [statusDetail, setStatusDetail] = useState<string | null>(null);
 
-  // Mock: fake timer → matched
+  // Investor demo: lock in the sample tutor before the short accept wait.
+  useEffect(() => {
+    if (usingBackend || !demoMode) return;
+    const topic = resolveTopic(booking.topicId);
+    setMatchedTutor(
+      demoMatchedTutor({
+        topicKey: booking.topicId,
+        subject: topic?.subject ?? 'E Maths',
+        mins: booking.mins,
+        location: booking.location,
+      }),
+    );
+  }, [
+    usingBackend,
+    demoMode,
+    booking.topicId,
+    booking.mins,
+    booking.location,
+    setMatchedTutor,
+  ]);
+
+  // Mock / investor demo: a sample tutor accepts after a short wait.
   useEffect(() => {
     if (usingBackend) return;
-    const t = setTimeout(() => router.replace('/student/matched'), 3500);
+    const t = setTimeout(() => router.replace('/student/matched'), demoMode ? 2200 : 3500);
     return () => clearTimeout(t);
-  }, [usingBackend, router]);
+  }, [usingBackend, demoMode, router]);
 
   // Backend: wait for real accept (poll + realtime)
   useEffect(() => {
@@ -142,7 +165,9 @@ export default function Matching() {
                 ? 'Tutor found — opening match…'
                 : usingBackend
                   ? 'Waiting for a tutor to accept…'
-                  : 'Searching among 12 qualified tutors…'}
+                  : demoMode
+                    ? 'A sample tutor is accepting your E-Math session…'
+                    : 'Searching among 12 qualified tutors…'}
             </Text>
             <DimText style={{ marginTop: 6 }}>
               {usingBackend

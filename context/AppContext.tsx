@@ -14,13 +14,34 @@ import {
   EARNINGS,
   INITIAL_REQUESTS,
   REQUEST_ORDER,
+  SCHEDULE_SEED,
   STYLE_TAGS,
   TOPICS,
   TUTOR_SUBJECTS,
   TutorRequest,
   EarningRow,
   resolveTopic,
+  type ScheduleSeed,
 } from '@/constants/mockData';
+import {
+  DEMO_ACCEPTED_IDS,
+  DEMO_AVAILABLE_BALANCE,
+  DEMO_AVAILABILITY,
+  DEMO_BOOKING,
+  DEMO_CURRICULUM,
+  DEMO_EARNINGS,
+  DEMO_INSIGHTS,
+  DEMO_PENDING_IDS,
+  DEMO_REQUESTS,
+  DEMO_SCHEDULE,
+  DEMO_TUTOR_BIO,
+  DEMO_WEAKNESSES,
+  DEMO_WEEK_SESSIONS,
+  DEMO_WEEK_TOTAL,
+  demoStudentTests,
+} from '@/constants/demoData';
+import { useDemo } from '@/context/DemoContext';
+import { isInvestorDemo } from '@/lib/demoGate';
 import type { StudentCurriculumEntry } from '@/constants/curriculum';
 import {
   fetchStudentCurriculum,
@@ -132,6 +153,10 @@ type AppState = {
   weekEarningsTotal: number;
   weekSessionCount: number;
   usingBackend: boolean;
+  /** Investor pitch demo — local sample data, no Supabase or Stripe. */
+  demoMode: boolean;
+  /** Upcoming sessions that were not accepted in this sitting (schedule tab). */
+  scheduleSeeds: Record<string, ScheduleSeed>;
   busyAction: boolean;
   /** Student Full SBB / SEC subjects + G1|G2|G3 levels. */
   studentCurriculum: StudentCurriculumEntry[];
@@ -158,7 +183,8 @@ const AppContext = createContext<AppState | null>(null);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const { profile, user, refreshProfile } = useAuth();
-  const usingBackend = isSupabaseConfigured;
+  const { ready: demoReady, active: demoActive, role: demoRole } = useDemo();
+  const usingBackend = isSupabaseConfigured && !demoActive;
 
   const [role, setRole] = useState<Role>('student');
   const [studentConsented, setStudentConsented] = useState(false);
@@ -198,6 +224,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [earningsRows, setEarningsRows] = useState<EarningRow[]>(usingBackend ? [] : EARNINGS);
   const [weekEarningsTotal, setWeekTotal] = useState(usingBackend ? 0 : 184);
   const [weekSessionCount, setWeekCount] = useState(usingBackend ? 0 : 9);
+  const [scheduleSeeds, setScheduleSeeds] = useState<Record<string, ScheduleSeed>>(SCHEDULE_SEED);
   const [busyAction, setBusyAction] = useState(false);
   const [tutorDataError, setTutorDataError] = useState<string | null>(null);
   const knownPendingRef = useRef<Set<string>>(new Set());
@@ -213,61 +240,183 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Sync role from authenticated profile when backend is on
   useEffect(() => {
+    if (demoActive) return;
     if (usingBackend && profile?.role) {
       setRole(profile.role);
     }
-  }, [usingBackend, profile?.role]);
+  }, [demoActive, usingBackend, profile?.role]);
+
+  const demoAppliedRef = useRef(false);
+  const snapshotRef = useRef<DemoSlice | null>(null);
+  const liveRef = useRef<DemoSlice | null>(null);
+  liveRef.current = {
+    role,
+    studentConsented,
+    tutorConsented,
+    booking,
+    requests,
+    pendingRequestIds,
+    acceptedRequestIds,
+    currentRequestId,
+    liveRequestId,
+    matchedTutor,
+    availableBalance,
+    withdrawAmount,
+    earningsRows,
+    weekEarningsTotal,
+    weekSessionCount,
+    tutorSubjects,
+    availabilityDays,
+    profileBio,
+    studentCurriculum,
+    studentTests,
+    studentInsights,
+    studentWeaknesses,
+    scheduleSeeds,
+  };
+
+  // Entering demo swaps in sample data and remembers the real in-memory session.
+  // Leaving restores that session. Role switches do not reseed.
+  useEffect(() => {
+    if (!demoReady) return;
+
+    if (demoActive) {
+      if (demoAppliedRef.current) return;
+      demoAppliedRef.current = true;
+      if (liveRef.current) snapshotRef.current = cloneDemoSlice(liveRef.current);
+
+      setRole(demoRole);
+      setStudentConsented(true);
+      setTutorConsented(true);
+      setBookingState({ ...DEMO_BOOKING });
+      setRequests(copyRequests(DEMO_REQUESTS));
+      setPending([...DEMO_PENDING_IDS]);
+      setAccepted([...DEMO_ACCEPTED_IDS]);
+      setCurrentRequestId(null);
+      setLiveRequestId(null);
+      setMatchedTutor(null);
+      setBalance(DEMO_AVAILABLE_BALANCE);
+      setWithdrawAmount(DEMO_AVAILABLE_BALANCE);
+      setLastWithdrawal(null);
+      setEarningsRows(DEMO_EARNINGS.map((row) => ({ ...row })));
+      setWeekTotal(DEMO_WEEK_TOTAL);
+      setWeekCount(DEMO_WEEK_SESSIONS);
+      setTutorSubjects(['E Maths']);
+      setDays({ ...DEMO_AVAILABILITY });
+      setProfileBio(DEMO_TUTOR_BIO);
+      setStudentCurriculum(DEMO_CURRICULUM.map((entry) => ({ ...entry })));
+      setStudentTests(demoStudentTests());
+      setStudentInsights({ ...DEMO_INSIGHTS });
+      setStudentWeaknesses([...DEMO_WEAKNESSES]);
+      setScheduleSeeds(copySeeds(DEMO_SCHEDULE));
+      setCurriculumLoading(false);
+      setTestsLoading(false);
+      setInsightsLoading(false);
+      setTutorDataError(null);
+      setTutorOnline(true);
+      return;
+    }
+
+    if (!demoAppliedRef.current) return;
+    demoAppliedRef.current = false;
+    const snap = snapshotRef.current;
+    snapshotRef.current = null;
+    if (!snap) return;
+    restoreDemoSlice(snap, {
+      setRole,
+      setStudentConsented,
+      setTutorConsented,
+      setBookingState,
+      setRequests,
+      setPending,
+      setAccepted,
+      setCurrentRequestId,
+      setLiveRequestId,
+      setMatchedTutor,
+      setBalance,
+      setWithdrawAmount,
+      setEarningsRows,
+      setWeekTotal,
+      setWeekCount,
+      setTutorSubjects,
+      setDays,
+      setProfileBio,
+      setStudentCurriculum,
+      setStudentTests,
+      setStudentInsights,
+      setStudentWeaknesses,
+      setScheduleSeeds,
+    });
+  }, [demoReady, demoActive, demoRole]);
 
   const refreshCurriculum = useCallback(async () => {
+    if (demoActive || isInvestorDemo()) {
+      setCurriculumLoading(false);
+      return;
+    }
     setCurriculumLoading(true);
     try {
       if (usingBackend && user?.id) {
         const rows = await fetchStudentCurriculum(user.id);
+        if (isInvestorDemo()) return;
         setStudentCurriculum(rows);
       } else if (!usingBackend) {
         const rows = await loadLocalCurriculum();
+        if (isInvestorDemo()) return;
         setStudentCurriculum(rows);
       } else {
         setStudentCurriculum([]);
       }
     } catch (e) {
       console.warn('refreshCurriculum', e);
-      setStudentCurriculum([]);
+      if (!isInvestorDemo()) setStudentCurriculum([]);
     } finally {
       setCurriculumLoading(false);
     }
-  }, [usingBackend, user?.id]);
+  }, [demoActive, usingBackend, user?.id]);
 
   const refreshTests = useCallback(async () => {
+    if (demoActive || isInvestorDemo()) {
+      setTestsLoading(false);
+      return;
+    }
     setTestsLoading(true);
     try {
       if (usingBackend && user?.id) {
         const rows = await fetchStudentTests(user.id);
+        if (isInvestorDemo()) return;
         setStudentTests(rows);
       } else if (!usingBackend) {
         const rows = await loadLocalTests();
+        if (isInvestorDemo()) return;
         setStudentTests(rows);
       } else {
         setStudentTests([]);
       }
     } catch (e) {
       console.warn('refreshTests', e);
-      setStudentTests([]);
+      if (!isInvestorDemo()) setStudentTests([]);
     } finally {
       setTestsLoading(false);
     }
-  }, [usingBackend, user?.id]);
+  }, [demoActive, usingBackend, user?.id]);
 
   const refreshInsights = useCallback(async () => {
+    if (demoActive || isInvestorDemo()) {
+      setInsightsLoading(false);
+      return;
+    }
     setInsightsLoading(true);
     try {
       if (usingBackend && user?.id) {
         const fromProfile = insightsFromProfile(profile);
-        setStudentInsights(fromProfile);
         const weak = await fetchStudentWeaknesses(user.id);
+        if (isInvestorDemo()) return;
+        setStudentInsights(fromProfile);
         setStudentWeaknesses(weak);
       } else if (!usingBackend) {
         const local = await loadLocalInsightsBundle();
+        if (isInvestorDemo()) return;
         setStudentInsights(local.insights);
         setStudentWeaknesses(local.weaknessTopicKeys);
       } else {
@@ -276,27 +425,43 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (e) {
       console.warn('refreshInsights', e);
-      setStudentInsights({ ...EMPTY_INSIGHTS });
-      setStudentWeaknesses([]);
+      if (!isInvestorDemo()) {
+        setStudentInsights({ ...EMPTY_INSIGHTS });
+        setStudentWeaknesses([]);
+      }
     } finally {
       setInsightsLoading(false);
     }
-  }, [usingBackend, user?.id, profile]);
+  }, [demoActive, usingBackend, user?.id, profile]);
 
   useEffect(() => {
+    if (!demoReady) return;
     void refreshCurriculum();
-  }, [refreshCurriculum]);
+  }, [demoReady, refreshCurriculum]);
 
   useEffect(() => {
+    if (!demoReady) return;
     void refreshTests();
-  }, [refreshTests]);
+  }, [demoReady, refreshTests]);
 
   useEffect(() => {
+    if (!demoReady) return;
     void refreshInsights();
-  }, [refreshInsights]);
+  }, [demoReady, refreshInsights]);
 
   const saveCurriculum = useCallback(
     async (entries: StudentCurriculumEntry[]) => {
+      if (demoActive || isInvestorDemo()) {
+        setStudentCurriculum(entries.map((entry) => ({ ...entry })));
+        const first = entries[0];
+        if (first) {
+          const firstTopic = Object.values(TOPICS).find((t) => t.subjectKey === first.subjectKey);
+          if (firstTopic) {
+            setBookingState((prev) => ({ ...prev, topicId: firstTopic.id }));
+          }
+        }
+        return;
+      }
       const saved = await saveStudentCurriculum(entries);
       setStudentCurriculum(saved);
       const first = saved[0];
@@ -310,28 +475,67 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         await refreshProfile();
       }
     },
-    [usingBackend, refreshProfile],
+    [demoActive, usingBackend, refreshProfile],
   );
 
   const addTest = useCallback(async (input: TestInput) => {
+    if (demoActive || isInvestorDemo()) {
+      if (!TOPICS[input.topicKey]) throw new Error('Unknown topic');
+      const row: StudentTest = {
+        id: `demo_test_${Date.now().toString(36)}`,
+        topicKey: input.topicKey,
+        testDate: input.testDate,
+        label: input.label?.trim() || null,
+        createdAt: new Date().toISOString(),
+      };
+      setStudentTests((prev) => [...prev, row]);
+      return row;
+    }
     const row = await createStudentTest(input);
     setStudentTests((prev) => [...prev, row]);
     return row;
-  }, []);
+  }, [demoActive]);
 
   const editTest = useCallback(async (id: string, input: TestInput) => {
+    if (demoActive || isInvestorDemo()) {
+      if (!TOPICS[input.topicKey]) throw new Error('Unknown topic');
+      let updated: StudentTest | null = null;
+      setStudentTests((prev) =>
+        prev.map((t) => {
+          if (t.id !== id) return t;
+          updated = {
+            ...t,
+            topicKey: input.topicKey,
+            testDate: input.testDate,
+            label: input.label?.trim() || null,
+          };
+          return updated;
+        }),
+      );
+      if (!updated) throw new Error('Test not found');
+      return updated;
+    }
     const row = await updateStudentTest(id, input);
     setStudentTests((prev) => prev.map((t) => (t.id === id ? row : t)));
     return row;
-  }, []);
+  }, [demoActive]);
 
   const removeTest = useCallback(async (id: string) => {
+    if (demoActive || isInvestorDemo()) {
+      setStudentTests((prev) => prev.filter((t) => t.id !== id));
+      return;
+    }
     await deleteStudentTest(id);
     setStudentTests((prev) => prev.filter((t) => t.id !== id));
-  }, []);
+  }, [demoActive]);
 
   const saveInsights = useCallback(
     async (insights: StudentInsights, weaknessTopicKeys: string[]) => {
+      if (demoActive || isInvestorDemo()) {
+        setStudentInsights({ ...insights });
+        setStudentWeaknesses([...weaknessTopicKeys]);
+        return;
+      }
       const savedInsights = await saveStudentInsights(insights);
       const savedWeak = await saveStudentWeaknesses(weaknessTopicKeys);
       setStudentInsights(savedInsights);
@@ -340,7 +544,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         await refreshProfile();
       }
     },
-    [usingBackend, refreshProfile],
+    [demoActive, usingBackend, refreshProfile],
   );
 
   const curriculumReady = studentCurriculum.length > 0;
@@ -612,7 +816,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Mock-only: inject extra request after 14s
   useEffect(() => {
-    if (usingBackend) return;
+    if (usingBackend || demoActive) return;
     if (extraInjected) return;
     const t = setTimeout(() => {
       setExtraInjected(true);
@@ -622,7 +826,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (role === 'tutor') setToast(EXTRA_REQUEST.id);
     }, 14000);
     return () => clearTimeout(t);
-  }, [extraInjected, tutorOnline, role, usingBackend]);
+  }, [extraInjected, tutorOnline, role, usingBackend, demoActive]);
 
   const value = useMemo<AppState>(
     () => ({
@@ -672,6 +876,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       weekEarningsTotal,
       weekSessionCount,
       usingBackend,
+      demoMode: demoActive,
+      scheduleSeeds,
       busyAction,
       studentCurriculum,
       curriculumLoading,
@@ -727,6 +933,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       weekEarningsTotal,
       weekSessionCount,
       usingBackend,
+      demoActive,
+      scheduleSeeds,
       busyAction,
       studentCurriculum,
       curriculumLoading,
@@ -754,6 +962,112 @@ export function useApp() {
   const ctx = useContext(AppContext);
   if (!ctx) throw new Error('useApp must be used within AppProvider');
   return ctx;
+}
+
+type DemoSlice = {
+  role: Role;
+  studentConsented: boolean;
+  tutorConsented: boolean;
+  booking: Booking;
+  requests: Record<string, TutorRequest>;
+  pendingRequestIds: string[];
+  acceptedRequestIds: string[];
+  currentRequestId: string | null;
+  liveRequestId: string | null;
+  matchedTutor: MatchedTutorInfo | null;
+  availableBalance: number;
+  withdrawAmount: number;
+  earningsRows: EarningRow[];
+  weekEarningsTotal: number;
+  weekSessionCount: number;
+  tutorSubjects: string[];
+  availabilityDays: Record<string, boolean>;
+  profileBio: string;
+  studentCurriculum: StudentCurriculumEntry[];
+  studentTests: StudentTest[];
+  studentInsights: StudentInsights;
+  studentWeaknesses: string[];
+  scheduleSeeds: Record<string, ScheduleSeed>;
+};
+
+function copyRequests(source: Record<string, TutorRequest>): Record<string, TutorRequest> {
+  return Object.fromEntries(Object.entries(source).map(([id, row]) => [id, { ...row }]));
+}
+
+function copySeeds(source: Record<string, ScheduleSeed>): Record<string, ScheduleSeed> {
+  return Object.fromEntries(Object.entries(source).map(([id, row]) => [id, { ...row }]));
+}
+
+function cloneDemoSlice(source: DemoSlice): DemoSlice {
+  return {
+    ...source,
+    booking: { ...source.booking },
+    requests: copyRequests(source.requests),
+    pendingRequestIds: [...source.pendingRequestIds],
+    acceptedRequestIds: [...source.acceptedRequestIds],
+    matchedTutor: source.matchedTutor ? { ...source.matchedTutor } : null,
+    earningsRows: source.earningsRows.map((row) => ({ ...row })),
+    tutorSubjects: [...source.tutorSubjects],
+    availabilityDays: { ...source.availabilityDays },
+    studentCurriculum: source.studentCurriculum.map((entry) => ({ ...entry })),
+    studentTests: source.studentTests.map((row) => ({ ...row })),
+    studentInsights: { ...source.studentInsights },
+    studentWeaknesses: [...source.studentWeaknesses],
+    scheduleSeeds: copySeeds(source.scheduleSeeds),
+  };
+}
+
+function restoreDemoSlice(
+  snap: DemoSlice,
+  set: {
+    setRole: (r: Role) => void;
+    setStudentConsented: (v: boolean) => void;
+    setTutorConsented: (v: boolean) => void;
+    setBookingState: (b: Booking) => void;
+    setRequests: (r: Record<string, TutorRequest>) => void;
+    setPending: (ids: string[]) => void;
+    setAccepted: (ids: string[]) => void;
+    setCurrentRequestId: (id: string | null) => void;
+    setLiveRequestId: (id: string | null) => void;
+    setMatchedTutor: (m: MatchedTutorInfo | null) => void;
+    setBalance: (n: number) => void;
+    setWithdrawAmount: (n: number) => void;
+    setEarningsRows: (rows: EarningRow[]) => void;
+    setWeekTotal: (n: number) => void;
+    setWeekCount: (n: number) => void;
+    setTutorSubjects: (s: string[]) => void;
+    setDays: (d: Record<string, boolean>) => void;
+    setProfileBio: (v: string) => void;
+    setStudentCurriculum: (e: StudentCurriculumEntry[]) => void;
+    setStudentTests: (t: StudentTest[]) => void;
+    setStudentInsights: (i: StudentInsights) => void;
+    setStudentWeaknesses: (w: string[]) => void;
+    setScheduleSeeds: (s: Record<string, ScheduleSeed>) => void;
+  },
+) {
+  set.setRole(snap.role);
+  set.setStudentConsented(snap.studentConsented);
+  set.setTutorConsented(snap.tutorConsented);
+  set.setBookingState(snap.booking);
+  set.setRequests(snap.requests);
+  set.setPending(snap.pendingRequestIds);
+  set.setAccepted(snap.acceptedRequestIds);
+  set.setCurrentRequestId(snap.currentRequestId);
+  set.setLiveRequestId(snap.liveRequestId);
+  set.setMatchedTutor(snap.matchedTutor);
+  set.setBalance(snap.availableBalance);
+  set.setWithdrawAmount(snap.withdrawAmount);
+  set.setEarningsRows(snap.earningsRows);
+  set.setWeekTotal(snap.weekEarningsTotal);
+  set.setWeekCount(snap.weekSessionCount);
+  set.setTutorSubjects(snap.tutorSubjects);
+  set.setDays(snap.availabilityDays);
+  set.setProfileBio(snap.profileBio);
+  set.setStudentCurriculum(snap.studentCurriculum);
+  set.setStudentTests(snap.studentTests);
+  set.setStudentInsights(snap.studentInsights);
+  set.setStudentWeaknesses(snap.studentWeaknesses);
+  set.setScheduleSeeds(snap.scheduleSeeds);
 }
 
 export { TUTOR_SUBJECTS, STYLE_TAGS };

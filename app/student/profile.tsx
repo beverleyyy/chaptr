@@ -13,6 +13,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
+import { DEMO_STUDENT } from '@/constants/demoData';
 import {
   curriculumLabel,
   type CurriculumSubjectKey,
@@ -110,6 +111,7 @@ export default function StudentProfile() {
     studentWeaknesses,
     insightsLoading,
     saveInsights,
+    demoMode,
   } = useApp();
 
   const [draft, setDraft] = useState<StudentInsights>({ ...EMPTY_INSIGHTS });
@@ -141,8 +143,8 @@ export default function StudentProfile() {
     });
   }, [studentCurriculum]);
 
-  const name = profile?.name?.trim() || 'Student';
-  const email = user?.email ?? '';
+  const name = demoMode ? DEMO_STUDENT.name : profile?.name?.trim() || 'Student';
+  const email = demoMode ? DEMO_STUDENT.summary : (user?.email ?? '');
   const today = singaporeToday();
   const upcoming = useMemo(() => upcomingTests(studentTests, today), [studentTests, today]);
 

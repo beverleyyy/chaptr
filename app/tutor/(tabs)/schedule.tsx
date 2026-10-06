@@ -2,18 +2,17 @@ import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { useApp } from '@/context/AppContext';
 import { Screen, Card, Display, DimText } from '@/components/ui';
 import { SessionCard } from '@/components/SessionCard';
-import { SCHEDULE_SEED } from '@/constants/mockData';
 import { fonts } from '@/constants/theme';
 import { colors } from '@/constants/theme';
 
 export default function TutorSchedule() {
-  const { acceptedRequestIds, requests, cancelledSeedIds } = useApp();
+  const { acceptedRequestIds, requests, cancelledSeedIds, scheduleSeeds } = useApp();
 
-  const all: { id: string; time: string; session: (typeof requests)[string] | (typeof SCHEDULE_SEED)[string] }[] = [];
+  const all: { id: string; time: string; session: (typeof requests)[string] | (typeof scheduleSeeds)[string] }[] = [];
   acceptedRequestIds.forEach((id) => all.push({ id, time: requests[id].time, session: requests[id] }));
-  Object.keys(SCHEDULE_SEED).forEach((id) => {
+  Object.keys(scheduleSeeds).forEach((id) => {
     if (!cancelledSeedIds.includes(id)) {
-      all.push({ id, time: SCHEDULE_SEED[id].time, session: SCHEDULE_SEED[id] });
+      all.push({ id, time: scheduleSeeds[id].time, session: scheduleSeeds[id] });
     }
   });
 

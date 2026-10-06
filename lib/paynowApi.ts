@@ -1,4 +1,5 @@
 import { requireSupabase } from '@/lib/supabase';
+import { assertNotInvestorDemo } from '@/lib/demoGate';
 import type { LocationType } from '@/lib/types';
 
 export type CreatePaynowInput = {
@@ -41,6 +42,7 @@ function functionsErrorMessage(err: unknown, data: unknown): string {
 export async function createPaynowPayment(
   input: CreatePaynowInput,
 ): Promise<CreatePaynowResult> {
+  assertNotInvestorDemo();
   const sb = requireSupabase();
   const { data, error } = await sb.functions.invoke('create-paynow-payment', {
     body: {
@@ -67,6 +69,7 @@ export async function createPaynowPayment(
 export async function fetchPaynowStatus(
   paymentIntentId: string,
 ): Promise<PaynowStatusResult> {
+  assertNotInvestorDemo();
   const sb = requireSupabase();
   const { data, error } = await sb.functions.invoke('paynow-status', {
     body: { paymentIntentId },

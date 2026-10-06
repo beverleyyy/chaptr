@@ -44,7 +44,7 @@ function isPaymentReturnUrl(url: string | null | undefined): boolean {
 }
 
 export default function Payment() {
-  const { booking, submitBookingRequest, usingBackend, busyAction } = useApp();
+  const { booking, submitBookingRequest, usingBackend, busyAction, demoMode } = useApp();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
@@ -57,7 +57,7 @@ export default function Payment() {
   const topic = resolveTopic(booking.topicId);
   const subjectLabel = topic?.subject ?? 'Session';
 
-  const stripeLive = usingBackend && isStripePublishableConfigured();
+  const stripeLive = usingBackend && !demoMode && isStripePublishableConfigured();
 
   const finishBooking = useCallback(
     async (piId: string | null) => {
@@ -136,9 +136,25 @@ export default function Payment() {
     }
   }, []);
 
+  // Investor demo: fake a PayNow success, then open matching. No Stripe call.
+  useEffect(() => {
+    if (!demoMode) return;
+    setPhase('creating');
+    const paid = setTimeout(() => setPhase('done'), 700);
+    const next = setTimeout(() => {
+      if (submittedRef.current) return;
+      submittedRef.current = true;
+      router.push('/student/matching');
+    }, 1600);
+    return () => {
+      clearTimeout(paid);
+      clearTimeout(next);
+    };
+  }, [demoMode, router]);
+
   // Start PayNow PaymentIntent once when Stripe + backend are configured
   useEffect(() => {
-    if (!stripeLive || startedPayRef.current) return;
+    if (demoMode || !stripeLive || startedPayRef.current) return;
     startedPayRef.current = true;
     let cancelled = false;
 
@@ -248,8 +264,14 @@ export default function Payment() {
   };
 
   const confirmMock = async () => {
-    if (busy || busyAction || stripeLive) return;
+    if (busy || busyAction || stripeLive || demoMode) return;
     await finishBooking(null);
+  };
+
+  const continueDemo = () => {
+    if (submittedRef.current) return;
+    submittedRef.current = true;
+    router.push('/student/matching');
   };
 
   const waiting =
@@ -268,10 +290,12 @@ export default function Payment() {
           marginBottom: 8,
           fontFamily: fonts.medium,
           fontSize: 11,
-          color: usingBackend ? colors.accentDark : colors.danger,
+          color: demoMode || usingBackend ? colors.accentDark : colors.danger,
         }}
       >
-        {usingBackend
+        {demoMode
+          ? 'Investor demo — PayNow is simulated. Nothing is charged.'
+          : usingBackend
           ? stripeLive
             ? 'LIVE PayNow (Stripe test) — request is created only after payment succeeds'
             : 'LIVE booking — tutors will see this request in Supabase (PayNow QR mock until Stripe is configured)'
@@ -283,6 +307,23 @@ export default function Payment() {
           <Display style={{ fontSize: 28 }}>${booking.price}.00</Display>
         </View>
 
+        {demoMode ? (
+          <View style={styles.demoPaid} accessibilityRole="text">
+            <Ionicons
+              name={phase === 'done' ? 'checkmark-circle' : 'phone-portrait-outline'}
+              size={42}
+              color={phase === 'done' ? colors.success : colors.accent}
+            />
+            <Text style={styles.demoPaidTitle}>
+              {phase === 'done' ? 'Paid via PayNow' : 'Simulating PayNow…'}
+            </Text>
+            <DimText style={{ textAlign: 'center' }}>
+              {phase === 'done'
+                ? 'Sample payment only. A tutor will accept in a moment.'
+                : 'No bank app and no Stripe charge.'}
+            </DimText>
+          </View>
+        ) : (
         <View style={styles.qrWrap}>
           {stripeLive && qrImageUrl ? (
             <Image
@@ -294,10 +335,15 @@ export default function Payment() {
             <PayNowQR size={176} />
           )}
         </View>
+        )}
 
         <View style={{ alignItems: 'center' }}>
           <Text style={styles.payTitle}>
-            {stripeLive ? 'PayNow · Stripe test' : 'PayNow · UEN 202601234A'}
+            {demoMode
+              ? 'PayNow · simulated'
+              : stripeLive
+                ? 'PayNow · Stripe test'
+                : 'PayNow · UEN 202601234A'}
           </Text>
           <DimText style={{ marginTop: 2 }}>Ping Tutor Sessions</DimText>
           {hostedUrl ? (
@@ -314,7 +360,11 @@ export default function Payment() {
         <Card style={styles.info}>
           <Ionicons name="time-outline" size={16} color={colors.textDim} />
           <DimText style={{ flex: 1, fontSize: 12, lineHeight: 17 }}>
-            {stripeLive
+            {demoMode
+              ? phase === 'done'
+                ? 'Paid via PayNow. Opening the tutor search…'
+                : 'Simulating a PayNow transfer. Nothing is sent to a bank.'
+              : stripeLive
               ? phase === 'creating'
                 ? 'Creating your PayNow payment…'
                 : phase === 'submitting'
@@ -335,7 +385,13 @@ export default function Payment() {
         ) : null}
 
         <View style={{ marginTop: 'auto', width: '100%' }}>
-          {stripeLive ? (
+          {demoMode ? (
+            <BtnPrimary
+              label={phase === 'done' ? 'Paid via PayNow' : 'Simulating PayNow…'}
+              onPress={phase === 'done' ? continueDemo : () => {}}
+              disabled={phase !== 'done'}
+            />
+          ) : stripeLive ? (
             <BtnPrimary
               label={
                 phase === 'submitting' || busy || busyAction
@@ -402,5 +458,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.accent,
     textDecorationLine: 'underline',
+  },
+  demoPaid: {
+    width: '100%',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: colors.ink2,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.hairline,
+    paddingVertical: 28,
+    paddingHorizontal: 18,
+  },
+  demoPaidTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 20,
+    color: colors.text,
   },
 });

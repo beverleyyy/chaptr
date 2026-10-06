@@ -98,6 +98,18 @@ export default function SignIn() {
               </Pressable>
             </Link>
           </View>
+
+          <Pressable
+            style={styles.demoBtn}
+            onPress={() => router.push('/demo')}
+            accessibilityRole="button"
+            accessibilityLabel="Try the demo"
+          >
+            <Text style={styles.demoBtnText}>Try the demo</Text>
+          </Pressable>
+          <DimText style={styles.demoHint}>
+            Showing Ping to someone? Open a sample Sec 3–4 E-Math session with no account.
+          </DimText>
         </ScrollView>
       </KeyboardAvoidingView>
     </Screen>
@@ -148,5 +160,25 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bold,
     fontSize: 13,
     color: colors.accent,
+  },
+  demoBtn: {
+    marginTop: 28,
+    alignSelf: 'center',
+    borderWidth: 1.5,
+    borderColor: colors.accent,
+    backgroundColor: colors.ink2,
+    paddingVertical: 12,
+    paddingHorizontal: 28,
+    borderRadius: 14,
+  },
+  demoBtnText: {
+    fontFamily: fonts.bold,
+    fontSize: 15,
+    color: colors.accent,
+  },
+  demoHint: {
+    marginTop: 10,
+    textAlign: 'center',
+    lineHeight: 18,
   },
 });

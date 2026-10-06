@@ -11,6 +11,8 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
+import { useDemo } from '@/context/DemoContext';
+import { DEMO_TUTOR_SELF } from '@/constants/demoData';
 import { Screen, Card, Display, Tag, Avatar, Toggle, DimText, BtnGhost } from '@/components/ui';
 import { SessionCard } from '@/components/SessionCard';
 import {
@@ -38,11 +40,13 @@ export default function TutorHome() {
     weekEarningsTotal,
     weekSessionCount,
     usingBackend,
+    demoMode,
     refreshTutorData,
     tutorDataError,
   } = useApp();
+  const { setDemoRole } = useDemo();
   const { profile, user } = useAuth();
-  const displayName = profile?.name ?? 'Mr. Rajan';
+  const displayName = demoMode ? DEMO_TUTOR_SELF.name : (profile?.name ?? 'Mr. Rajan');
   const [refreshing, setRefreshing] = useState(false);
 
   // Always load pending on mount when signed in — do not wait on profile.role.
@@ -69,6 +73,7 @@ export default function TutorHome() {
 
   return (
     <Screen glow="left">
+      {demoMode ? null : (
       <View style={styles.debugBanner}>
         <Text style={styles.debugText}>
           {usingBackend
@@ -78,6 +83,7 @@ export default function TutorHome() {
             : 'DEMO MODE — .env not loaded. Stop Expo, confirm .env exists, run: npx expo start -c'}
         </Text>
       </View>
+      )}
       {toastRequestId && requests[toastRequestId] ? (() => {
         const toastReq = requests[toastRequestId];
         const toastTone = waitToneColors(waitUrgency(toastReq.secondsWaiting));
@@ -110,6 +116,11 @@ export default function TutorHome() {
         <View>
           <DimText>Good evening</DimText>
           <Display style={{ fontSize: 22, marginTop: 2 }}>{displayName}</Display>
+          {demoMode ? (
+            <DimText style={{ marginTop: 2 }}>
+              {DEMO_TUTOR_SELF.credential} · ★ {DEMO_TUTOR_SELF.rating}
+            </DimText>
+          ) : null}
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
           <View style={{ alignItems: 'flex-end', gap: 6, marginTop: 4 }}>
@@ -145,9 +156,17 @@ export default function TutorHome() {
       >
         <Pressable
           onPress={() => {
+            if (demoMode) {
+              setDemoRole('student');
+              setRole('student');
+              router.replace('/student/home');
+              return;
+            }
             setRole('student');
             router.replace('/role');
           }}
+          accessibilityRole="button"
+          accessibilityLabel="Switch to student view"
         >
           <Text style={styles.switchLink}>Switch to student view</Text>
         </Pressable>

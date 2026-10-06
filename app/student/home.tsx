@@ -4,7 +4,9 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
-import { Screen, Card, Display, Band, Tag, Spine, DimText } from '@/components/ui';
+import { useDemo } from '@/context/DemoContext';
+import { DEMO_STUDENT, DEMO_TUTORS, demoPrelimLabel } from '@/constants/demoData';
+import { Screen, Card, Display, Band, Tag, Spine, Avatar, DimText } from '@/components/ui';
 import {
   curriculumLabel,
   type CurriculumSubjectKey,
@@ -21,18 +23,21 @@ export default function StudentHome() {
     curriculumLoading,
     curriculumReady,
     studentTests,
+    demoMode,
   } = useApp();
+  const { setDemoRole } = useDemo();
   const { profile } = useAuth();
   const router = useRouter();
 
   const [subject, setSubject] = useState<CurriculumSubjectKey | null>(null);
 
   useEffect(() => {
+    if (demoMode) return;
     if (curriculumLoading) return;
     if (!curriculumReady) {
       router.replace('/student/curriculum');
     }
-  }, [curriculumLoading, curriculumReady, router]);
+  }, [demoMode, curriculumLoading, curriculumReady, router]);
 
   useEffect(() => {
     if (!studentCurriculum.length) {
@@ -61,7 +66,9 @@ export default function StudentHome() {
   }, [subject, activeLevel, testsByTopic]);
 
   const subjectLabel = subject ? curriculumLabel(subject, true) : '';
-  const firstName = profile?.name?.split(' ')[0] ?? 'Aiden';
+  const firstName = demoMode
+    ? DEMO_STUDENT.firstName
+    : (profile?.name?.split(' ')[0] ?? 'Aiden');
 
   const openTopic = (t: Topic) => {
     setBooking({ topicId: t.id });
@@ -86,16 +93,31 @@ export default function StudentHome() {
             <DimText>Welcome back, {firstName}</DimText>
             <Pressable
               onPress={() => {
+                if (demoMode) {
+                  setDemoRole('tutor');
+                  setRole('tutor');
+                  router.replace('/tutor/home');
+                  return;
+                }
                 setRole('tutor');
                 router.replace('/role');
               }}
+              accessibilityRole="button"
+              accessibilityLabel={demoMode ? 'Switch to tutor view' : 'Switch role'}
             >
-              <Text style={styles.switchLink}>Switch role</Text>
+              <Text style={styles.switchLink}>
+                {demoMode ? 'Switch to tutor view' : 'Switch role'}
+              </Text>
             </Pressable>
           </View>
           <Display style={{ fontSize: 23, marginTop: 2, lineHeight: 30 }}>
             Which topic do you need help with?
           </Display>
+          {demoMode ? (
+            <DimText style={{ marginTop: 6 }}>
+              {DEMO_STUDENT.summary} · {demoPrelimLabel()}
+            </DimText>
+          ) : null}
           <Pressable onPress={() => router.push('/student/curriculum')} style={styles.editLink}>
             <Text style={styles.editText}>Edit subjects</Text>
             <Ionicons name="chevron-forward" size={14} color={colors.accent} />
@@ -126,6 +148,24 @@ export default function StudentHome() {
             );
           })}
         </ScrollView>
+
+        {demoMode ? (
+          <View style={styles.tutorStrip}>
+            <Text style={styles.listTitle}>Tutors on for E-Math tonight</Text>
+            {DEMO_TUTORS.map((tutor) => (
+              <Card key={tutor.id} style={styles.tutorCard}>
+                <Avatar initials={tutor.initials} size={36} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.tutorName}>{tutor.name}</Text>
+                  <DimText style={{ marginTop: 2 }}>
+                    {tutor.credential} · ★ {tutor.rating}
+                  </DimText>
+                  <DimText style={{ marginTop: 1 }}>{tutor.focus}</DimText>
+                </View>
+              </Card>
+            ))}
+          </View>
+        ) : null}
 
         <View style={styles.listHeader}>
           <Text style={styles.listTitle}>
@@ -238,6 +278,9 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   listHint: { fontFamily: fonts.medium, fontSize: 11.5, color: colors.textDim },
+  tutorStrip: { paddingHorizontal: 22, gap: 8, marginBottom: 14 },
+  tutorCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12 },
+  tutorName: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.text },
   topicRow: { flexDirection: 'row', paddingVertical: 16, paddingRight: 16, paddingLeft: 0, gap: 0 },
   topicTitle: { fontFamily: fonts.semiBold, fontSize: 15, color: colors.text, lineHeight: 20 },
   bottomNav: {
