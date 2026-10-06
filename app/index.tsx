@@ -3,23 +3,29 @@ import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
+import { useDemo } from '@/context/DemoContext';
 import { colors, fonts } from '@/constants/theme';
 
 export default function Splash() {
   const router = useRouter();
   const { configured, loading, session } = useAuth();
+  const { ready: demoReady, active: demoActive, role: demoRole } = useDemo();
 
   useEffect(() => {
-    if (loading) return;
+    if (loading || !demoReady) return;
     const t = setTimeout(() => {
+      if (demoActive) {
+        router.replace(demoRole === 'tutor' ? '/tutor/home' : '/student/home');
+        return;
+      }
       if (configured && !session) {
         router.replace('/auth/sign-in');
       } else {
         router.replace('/role');
       }
-    }, configured ? 900 : 1600);
+    }, demoActive ? 600 : configured ? 900 : 1600);
     return () => clearTimeout(t);
-  }, [router, configured, loading, session]);
+  }, [router, configured, loading, session, demoReady, demoActive, demoRole]);
 
   return (
     <View style={styles.wrap}>

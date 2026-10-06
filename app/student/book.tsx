@@ -27,6 +27,7 @@ export default function BookSession() {
     curriculumReady,
     curriculumLoading,
     studentCurriculum,
+    demoMode,
   } = useApp();
   const router = useRouter();
   const baseTopic = resolveTopic(booking.topicId);
@@ -38,6 +39,7 @@ export default function BookSession() {
   }, [baseTopic, studentCurriculum]);
 
   useEffect(() => {
+    if (demoMode) return;
     if (curriculumLoading) return;
     if (!curriculumReady) {
       router.replace('/student/curriculum');
@@ -54,6 +56,7 @@ export default function BookSession() {
     curriculumReady,
     router,
     baseTopic,
+    demoMode,
     studentCurriculum,
   ]);
 

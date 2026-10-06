@@ -57,11 +57,18 @@ export default function Matched() {
             <View style={{ flex: 1 }}>
               <Text style={styles.name}>{tutorName}</Text>
               <Text style={styles.stars}>
-                ★ 4.9{' '}
-                <Text style={{ color: colors.textDim, fontFamily: fonts.medium }}>
-                  {usingBackend && matchedTutor ? '(Ping match)' : '(128 sessions)'}
-                </Text>
+                {matchedTutor?.ratingLabel ?? (
+                  <>
+                    ★ 4.9{' '}
+                    <Text style={{ color: colors.textDim, fontFamily: fonts.medium }}>
+                      {usingBackend && matchedTutor ? '(Ping match)' : '(128 sessions)'}
+                    </Text>
+                  </>
+                )}
               </Text>
+              {matchedTutor?.credential ? (
+                <DimText style={{ marginTop: 3 }}>{matchedTutor.credential}</DimText>
+              ) : null}
             </View>
           </View>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>

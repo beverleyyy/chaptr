@@ -8,6 +8,7 @@ import {
   type SubjectLevel,
 } from '@/constants/curriculum';
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase';
+import { assertNotInvestorDemo, isInvestorDemo } from '@/lib/demoGate';
 
 type CurriculumRow = {
   subject_key: string;
@@ -53,6 +54,7 @@ export async function saveLocalCurriculum(
 export async function fetchStudentCurriculum(
   studentId: string,
 ): Promise<StudentCurriculumEntry[]> {
+  if (isInvestorDemo()) return [];
   const sb = getSupabase();
   if (!sb) return loadLocalCurriculum();
 
@@ -81,6 +83,7 @@ export async function saveStudentCurriculum(
     }
   }
 
+  assertNotInvestorDemo();
   if (!isSupabaseConfigured) {
     return saveLocalCurriculum(entries);
   }

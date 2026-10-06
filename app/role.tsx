@@ -2,6 +2,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
+import { useDemo } from '@/context/DemoContext';
 import { colors, fonts } from '@/constants/theme';
 import { isStripePublishableConfigured } from '@/lib/paynowApi';
 
@@ -16,10 +17,17 @@ export default function RolePicker() {
     curriculumLoading,
   } = useApp();
   const { configured, profile, signOut, session, loading } = useAuth();
+  const { active: demoActive, setDemoRole, exitDemo } = useDemo();
 
-  const needsSignIn = configured && !loading && !session;
+  const needsSignIn = configured && !loading && !session && !demoActive;
 
   const goStudent = () => {
+    if (demoActive) {
+      setDemoRole('student');
+      setRole('student');
+      router.replace('/student/home');
+      return;
+    }
     if (needsSignIn) {
       router.replace('/auth/sign-in');
       return;
@@ -36,6 +44,12 @@ export default function RolePicker() {
     router.replace(curriculumReady ? '/student/home' : '/student/curriculum');
   };
   const goTutor = () => {
+    if (demoActive) {
+      setDemoRole('tutor');
+      setRole('tutor');
+      router.replace('/tutor/home');
+      return;
+    }
     if (needsSignIn) {
       router.replace('/auth/sign-in');
       return;
@@ -60,7 +74,9 @@ export default function RolePicker() {
         </Text>
       ) : (
         <Text style={styles.hint}>
-          {needsSignIn
+          {demoActive
+            ? 'Investor demo — sample data only'
+            : needsSignIn
             ? 'Sign in to open student or tutor'
             : usingBackend
               ? 'Choose how to continue'
@@ -83,6 +99,17 @@ export default function RolePicker() {
           </View>
           <Text style={styles.note}>
             Live mode needs an account. Sign in (or create one) before opening Student or Tutor.
+          </Text>
+          <Pressable
+            style={styles.demoBtn}
+            onPress={() => router.push('/demo')}
+            accessibilityRole="button"
+            accessibilityLabel="Try the demo"
+          >
+            <Text style={styles.demoBtnText}>Try the demo</Text>
+          </Pressable>
+          <Text style={styles.demoHint}>
+            No sign-in. Walk through Sec 3–4 E-Math as a student or a tutor. Nothing is saved.
           </Text>
         </>
       ) : (
@@ -110,12 +137,41 @@ export default function RolePicker() {
             </Pressable>
           </View>
           <Text style={styles.note}>
-            {configured
+            {demoActive
+              ? 'Sample Singapore tutoring data stays on this device. Exit demo before using a real account.'
+              : configured
               ? isStripePublishableConfigured()
                 ? 'Connected to Supabase — requests & sessions sync when online. PayNow uses Stripe test mode when the Edge Function secret is set.'
                 : 'Connected to Supabase — requests & sessions sync when online. Add EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY for live PayNow QR.'
               : 'Mock data only — set EXPO_PUBLIC_SUPABASE_* in .env for real auth & data.'}
           </Text>
+          {demoActive ? (
+            <Pressable
+              style={styles.demoBtn}
+              onPress={() => {
+                exitDemo();
+                router.replace('/role');
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Exit demo"
+            >
+              <Text style={styles.demoBtnText}>Exit demo</Text>
+            </Pressable>
+          ) : (
+            <>
+              <Pressable
+                style={styles.demoBtn}
+                onPress={() => router.push('/demo')}
+                accessibilityRole="button"
+                accessibilityLabel="Try the demo"
+              >
+                <Text style={styles.demoBtnText}>Try the demo</Text>
+              </Pressable>
+              <Text style={styles.demoHint}>
+                No sign-in. Walk through Sec 3–4 E-Math as a student or a tutor. Nothing is saved.
+              </Text>
+            </>
+          )}
         </>
       )}
 
@@ -220,5 +276,28 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semiBold,
     fontSize: 13,
     color: colors.accent,
+  },
+  demoBtn: {
+    marginTop: 22,
+    borderWidth: 1.5,
+    borderColor: colors.accent,
+    backgroundColor: colors.ink2,
+    paddingVertical: 12,
+    paddingHorizontal: 28,
+    borderRadius: 14,
+  },
+  demoBtnText: {
+    fontFamily: fonts.bold,
+    fontSize: 15,
+    color: colors.accent,
+  },
+  demoHint: {
+    marginTop: 10,
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: colors.textDim,
+    textAlign: 'center',
+    maxWidth: 320,
+    lineHeight: 18,
   },
 });

@@ -6,6 +6,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { TOPICS } from '@/constants/mockData';
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase';
+import { assertNotInvestorDemo, isInvestorDemo } from '@/lib/demoGate';
 
 export const TESTS_STORAGE_KEY = 'chaptr_student_tests_v1';
 
@@ -148,6 +149,7 @@ async function saveLocalTests(tests: StudentTest[]): Promise<StudentTest[]> {
 }
 
 export async function fetchStudentTests(studentId: string): Promise<StudentTest[]> {
+  if (isInvestorDemo()) return [];
   const sb = getSupabase();
   if (!sb) return loadLocalTests();
 
@@ -180,6 +182,7 @@ function validateInput(input: TestInput): void {
 export async function createStudentTest(input: TestInput): Promise<StudentTest> {
   validateInput(input);
   const label = input.label?.trim() || null;
+  assertNotInvestorDemo();
 
   if (!isSupabaseConfigured) {
     const list = await loadLocalTests();
@@ -234,6 +237,7 @@ export async function updateStudentTest(
 ): Promise<StudentTest> {
   validateInput(input);
   const label = input.label?.trim() || null;
+  assertNotInvestorDemo();
 
   if (!isSupabaseConfigured) {
     const list = await loadLocalTests();
@@ -282,6 +286,7 @@ export async function updateStudentTest(
 }
 
 export async function deleteStudentTest(id: string): Promise<void> {
+  assertNotInvestorDemo();
   if (!isSupabaseConfigured) {
     const list = await loadLocalTests();
     await saveLocalTests(list.filter((t) => t.id !== id));

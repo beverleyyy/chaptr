@@ -1,4 +1,5 @@
 import { requireSupabase, getSupabase } from '@/lib/supabase';
+import { assertNotInvestorDemo } from '@/lib/demoGate';
 import { abbreviatedName, initialsFromName } from '@/lib/privacy';
 import type {
   EarningRowDb,
@@ -49,6 +50,10 @@ export type MatchedTutorInfo = {
   scheduledLabel: string | null;
   /** sessions.video_link — null for in-person. */
   videoLink: string | null;
+  /** Investor demo only — school / credential line. */
+  credential?: string | null;
+  /** Investor demo only — preformatted rating, e.g. "★ 4.9 (128 sessions)". */
+  ratingLabel?: string | null;
 };
 
 function secondsUntil(iso: string): number {
@@ -143,6 +148,7 @@ export async function ensureOwnProfile(opts: {
   name: string;
   phone?: string | null;
 }): Promise<string> {
+  assertNotInvestorDemo();
   const sb = requireSupabase();
   const { data: authData, error: authErr } = await sb.auth.getUser();
   if (authErr || !authData.user) throw new Error('Sign in required');
@@ -210,6 +216,7 @@ export function mapRequestToUi(
 }
 
 export async function createTutoringRequest(input: CreateRequestInput): Promise<TutoringRequestRow> {
+  assertNotInvestorDemo();
   const sb = requireSupabase();
 
   // Prefer security-definer RPC (003) — upserts student profile + inserts request
@@ -436,6 +443,7 @@ export function watchPendingRequestInserts(onInsert: () => void): () => void {
 }
 
 export async function acceptTutoringRequest(requestId: string): Promise<SessionRow> {
+  assertNotInvestorDemo();
   const sb = requireSupabase();
   const { data, error } = await sb.rpc('accept_tutoring_request', {
     p_request_id: requestId,
@@ -445,6 +453,7 @@ export async function acceptTutoringRequest(requestId: string): Promise<SessionR
 }
 
 export async function declineTutoringRequest(requestId: string): Promise<void> {
+  assertNotInvestorDemo();
   const sb = requireSupabase();
   // Prefer RPC from 002_booking_polish when present; fall back to RLS update
   const { error: rpcErr } = await sb.rpc('decline_tutoring_request', {

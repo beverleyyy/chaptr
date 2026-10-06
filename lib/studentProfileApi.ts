@@ -15,6 +15,7 @@ import {
   type StudentInsights,
 } from '@/constants/studentProfile';
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase';
+import { assertNotInvestorDemo, isInvestorDemo } from '@/lib/demoGate';
 import type { Profile } from '@/lib/types';
 
 export const INSIGHTS_STORAGE_KEY = 'chaptr_student_insights_v1';
@@ -90,6 +91,7 @@ export async function saveLocalWeaknesses(topicKeys: string[]): Promise<string[]
 }
 
 export async function fetchStudentWeaknesses(studentId: string): Promise<string[]> {
+  if (isInvestorDemo()) return [];
   const sb = getSupabase();
   if (!sb) {
     const local = await loadLocalInsightsBundle();
@@ -138,6 +140,7 @@ export async function fetchWeaknessesForStudents(
 
 export async function saveStudentInsights(insights: StudentInsights): Promise<StudentInsights> {
   const next = normalizeInsights(insights);
+  assertNotInvestorDemo();
 
   if (!isSupabaseConfigured) {
     return saveLocalInsights(next);
@@ -168,6 +171,7 @@ export async function saveStudentInsights(insights: StudentInsights): Promise<St
 
 export async function saveStudentWeaknesses(topicKeys: string[]): Promise<string[]> {
   const next = [...new Set(topicKeys.filter((k) => !!TOPICS[k]))];
+  assertNotInvestorDemo();
 
   if (!isSupabaseConfigured) {
     return saveLocalWeaknesses(next);

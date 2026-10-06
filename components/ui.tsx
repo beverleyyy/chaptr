@@ -8,7 +8,10 @@ import {
   StyleProp,
   TextStyle,
 } from 'react-native';
+import { usePathname } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useDemo } from '@/context/DemoContext';
 import { colors, fonts } from '@/constants/theme';
 
 export function Screen({
@@ -20,8 +23,13 @@ export function Screen({
   style?: StyleProp<ViewStyle>;
   glow?: 'right' | 'left' | 'none';
 }) {
+  const demo = useDemo();
+  const path = usePathname();
+  const insets = useSafeAreaInsets();
+  const showDemoBar =
+    demo.active && (path.startsWith('/student') || path.startsWith('/tutor'));
   return (
-    <View style={[styles.screen, style]}>
+    <View style={[styles.screen, showDemoBar && { paddingTop: Math.max(insets.top, 0) + 44 }, style]}>
       {glow !== 'none' && (
         <View
           pointerEvents="none"

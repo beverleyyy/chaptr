@@ -12,6 +12,8 @@ import {
 } from '@expo-google-fonts/plus-jakarta-sans';
 import { AuthProvider } from '@/context/AuthContext';
 import { AppProvider } from '@/context/AppContext';
+import { DemoProvider } from '@/context/DemoContext';
+import { DemoChrome } from '@/components/DemoChrome';
 import { colors } from '@/constants/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -32,6 +34,7 @@ function RootStack() {
       >
         <Stack.Screen name="index" options={{ animation: 'fade' }} />
         <Stack.Screen name="role" options={{ animation: 'fade' }} />
+        <Stack.Screen name="demo" options={{ animation: 'fade' }} />
         <Stack.Screen name="auth" options={{ animation: 'fade' }} />
         <Stack.Screen name="student" />
         <Stack.Screen name="tutor" />
@@ -65,10 +68,13 @@ export default function RootLayout() {
   }, [loaded, error]);
 
   return (
-    <AuthProvider>
-      <AppProvider>
-        <RootStack />
-      </AppProvider>
-    </AuthProvider>
+    <DemoProvider>
+      <AuthProvider>
+        <AppProvider>
+          <RootStack />
+          <DemoChrome />
+        </AppProvider>
+      </AuthProvider>
+    </DemoProvider>
   );
 }
